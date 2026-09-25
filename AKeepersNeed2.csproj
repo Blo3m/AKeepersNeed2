@@ -1,0 +1,57 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net461</TargetFramework>
+    <AssemblyName>AKeepersNeed2</AssemblyName>
+    <Product>A Keepers Need 2</Product>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json;
+      https://nuget.samboy.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+    <RootNamespace>AKeepersNeed2</RootNamespace>
+    <CopyLocalLockFileAssemblies>false</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <!-- dllrefs/ holds game DLLs and reference-only decompiled .cs — never compile them. -->
+  <ItemGroup>
+    <Compile Remove="dllrefs\**\*.cs" />
+    <None Remove="dllrefs\**\*.cs" />
+  </ItemGroup>
+
+  <!-- Keep the output folder to just our plugin. References (game DLLs, BepInEx,
+       Unity, and the net461 netstandard/System.* facades) stay available for
+       COMPILE but are never copied to bin/ — the Unity/Mono + BepInEx runtime
+       already provides all of them. -->
+  <Target Name="DisableReferenceCopyLocal" AfterTargets="ResolveAssemblyReferences">
+    <ItemGroup>
+      <ReferenceCopyLocalPaths Remove="@(ReferenceCopyLocalPaths)" />
+    </ItemGroup>
+  </Target>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Analyzers" Version="1.*" PrivateAssets="all" />
+    <PackageReference Include="BepInEx.Core" Version="5.*" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+    <PackageReference Include="UnityEngine.Modules" Version="6000.3.9" IncludeAssets="compile" />
+  </ItemGroup>
+  
+  <ItemGroup Condition="'$(TargetFramework.TrimEnd(`0123456789`))' == 'net'">
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
+  </ItemGroup>
+  
+  <!-- The game's managed assemblies are copyrighted and are NOT distributed with this
+       repo. Their <Reference> items live in GameReferences.props, which is git-ignored and
+       machine-local: run ./build.ps1 to generate it from your own Graveyard Keeper 2
+       install, or point it wherever you keep the DLLs. See README.md. -->
+  <Import Project="$(MSBuildProjectDirectory)\GameReferences.props"
+          Condition="Exists('$(MSBuildProjectDirectory)\GameReferences.props')" />
+
+  <Target Name="EnsureGameReferences" BeforeTargets="ResolveAssemblyReferences"
+          Condition="!Exists('$(MSBuildProjectDirectory)\GameReferences.props')">
+    <Error Text="GameReferences.props not found. Run ./build.ps1 to generate it from your local Graveyard Keeper 2 install (it supplies references to the game's copyrighted DLLs, which are not included in this repo). See README.md." />
+  </Target>
+</Project>
