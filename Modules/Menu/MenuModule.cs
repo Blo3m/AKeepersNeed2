@@ -30,6 +30,11 @@ internal sealed class MenuModule : IModule, IUpdatable
 
     public void Tick()
     {
+        // While the menu is capturing a key for a rebind, it owns this frame's input.
+        if (_window != null && _window.TickInput())
+        {
+            return;
+        }
         if (Input.GetKeyDown(ModConfig.MenuHotkey.Value))
         {
             Toggle();

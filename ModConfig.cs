@@ -12,6 +12,7 @@ internal static class ModConfig
 {
     // --- Menu ---
     public static ConfigEntry<KeyCode> MenuHotkey;
+    public static ConfigEntry<float> UiScale; // menu size multiplier, 0.5 .. 3.0
 
     // --- Energy regen (passive, while not sleeping) ---
     public static ConfigEntry<bool> EnergyRegenEnabled;
@@ -32,10 +33,17 @@ internal static class ModConfig
     public static ConfigEntry<bool> TechPointsEnabled;
     public static ConfigEntry<float> TechPointsMultiplier; // 1x .. 10x
 
+    // --- Map (display-only; nothing is written to the save) ---
+    public static ConfigEntry<bool> RevealMapEnabled;
+    public static ConfigEntry<bool> UnlockMilestonesEnabled;
+
     public static void Init(ConfigFile config)
     {
         MenuHotkey = config.Bind("Menu", "Hotkey", KeyCode.F1,
             "Key that toggles the mod menu.");
+        UiScale = config.Bind("Menu", "UiScale", 1f,
+            new ConfigDescription("Menu size multiplier (1 = game default).",
+                new AcceptableValueRange<float>(0.5f, 3f)));
 
         EnergyRegenEnabled = config.Bind("EnergyRegen", "Enabled", false,
             "Passively regenerate energy while not sleeping.");
@@ -63,6 +71,12 @@ internal static class ModConfig
         TechPointsMultiplier = config.Bind("TechPoints", "Multiplier", 1f,
             new ConfigDescription("Technology point multiplier.",
                 new AcceptableValueRange<float>(1f, 10f)));
+
+        RevealMapEnabled = config.Bind("MapReveal", "Enabled", false,
+            "Show every map zone and area label as if explored. Display-only.");
+
+        UnlockMilestonesEnabled = config.Bind("MapMilestones", "Enabled", false,
+            "Draw every map milestone as activated (teleportable). Display-only.");
     }
 
     // --- Mapping helpers between a UISlider's 0..100 space and a multiplier ---

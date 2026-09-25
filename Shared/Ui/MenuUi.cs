@@ -42,6 +42,45 @@ internal static class MenuUi
         return text;
     }
 
+    /// <summary>Creates a single-line TMP input field (cell-styled) with a placeholder.</summary>
+    public static TMP_InputField CreateInputField(string name, Transform parent, string placeholder,
+        float size, TMP_InputField.ContentType contentType = TMP_InputField.ContentType.Standard)
+    {
+        var go = new GameObject(name, typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+
+        var image = go.AddComponent<Image>();
+        image.color = new Color(0.2f, 0.1f, 0.07f, 1f);
+        ApplyCell(image);
+
+        var input = go.AddComponent<TMP_InputField>();
+        input.targetGraphic = image;
+        input.lineType = TMP_InputField.LineType.SingleLine;
+        input.contentType = contentType;
+
+        var area = new GameObject("TextArea", typeof(RectTransform));
+        area.transform.SetParent(go.transform, false);
+        var areaRect = (RectTransform)area.transform;
+        SetRect(areaRect, new Vector2(6f, 2f), new Vector2(-6f, -2f), Vector2.zero, Vector2.one);
+        area.AddComponent<RectMask2D>();
+
+        TextMeshProUGUI text = CreateText("Text", area.transform, size, TextAlignmentOptions.Left, Color.white);
+        Stretch(text.rectTransform);
+        text.textWrappingMode = TextWrappingModes.NoWrap;
+
+        TextMeshProUGUI ph = CreateText("Placeholder", area.transform, size,
+            TextAlignmentOptions.Left, new Color(0.6f, 0.56f, 0.53f, 0.7f));
+        Stretch(ph.rectTransform);
+        ph.textWrappingMode = TextWrappingModes.NoWrap;
+        ph.text = placeholder;
+
+        input.textViewport = areaRect;
+        input.textComponent = text;
+        input.placeholder = ph;
+        input.text = string.Empty;
+        return input;
+    }
+
     public static LazyButton CreateButton(string name, Transform parent, string label,
         Vector2 offsetMin, Vector2 offsetMax, Vector2 anchorMin, Vector2 anchorMax)
     {

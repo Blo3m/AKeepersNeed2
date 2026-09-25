@@ -1,4 +1,3 @@
-using System;
 using System.Reflection;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
@@ -9,19 +8,40 @@ using UnityEngine.UI;
 namespace AKeepersNeed2.Modules.Menu;
 
 /// <summary>
-/// The mod's menu, built from scratch as a uGUI window and styled with the game's
-/// own assets captured by <see cref="NativeUiSkin"/>. Subclasses the game's
-/// <c>LazyWindow</c> so it participates in the native window stack, input and gamepad
-/// handling. Structure follows GK2-Mod-Framework's ModsMenuWindow, reduced to a
-/// single settings page for this mod's features. See docs/UI.md.
+/// The mod's menu: a from-scratch uGUI window styled from the game's own assets
+/// (<see cref="NativeUiSkin"/>) and subclassing the game's <c>LazyWindow</c> so it joins the
+/// native window stack/input. A title header and a footer (bottom tab bar + Close) frame a
+/// content area that swaps between <see cref="IMenuTab"/> pages. The Settings tab's UI-scale
+/// and hotkey-rebind controls are built here because they need window state (a scaling ghost
+/// + confirm dialog, and per-frame key capture). See docs/UI.md.
 /// </summary>
 internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 {
     private const float PanelWidth = 340f;
     private const float SidePadding = 20f;
+    private const float TabWidth = 74f;
 
+    private static readonly KeyCode[] AllKeys = (KeyCode[])System.Enum.GetValues(typeof(KeyCode));
+
+    private IMenuTab[] _tabs;
     private RectTransform _panelRect;
-    private float _nextRowTop;
+    private RectTransform _content;
+    private RectTransform[] _pages;
+    private TextMeshProUGUI[] _tabLabels;
+    private GamepadNavigationItem[] _tabNavItems;
+    private ScrollRect _tabScroll;
+
+    // UI-scale preview state.
+    private Slider _scaleSlider;
+    private TextMeshProUGUI _scaleValueLabel;
+    private bool _scalePreviewActive;
+    private GameObject _scaleGhost;
+    private GameObject _scaleDialog;
+    private TextMeshProUGUI _scaleDialogValue;
+
+    // Hotkey rebind state.
+    private TextMeshProUGUI _rebindButtonLabel;
+    private bool _rebindListening;
 
     public static AKNMenuWindow CreateInstance()
     {
@@ -72,6 +92,16 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 
     private void BuildUi()
     {
+        // Built here (not a field initializer) so tabs can capture this window.
+        _tabs = new IMenuTab[]
+        {
+            new SettingsTab(this),
+            new PlayerTab(),
+            new DropsTab(),
+            new ItemsTab(),
+            new MapTab(),
+        };
+
         MenuUi.Stretch((RectTransform)transform);
 
         Image shade = MenuUi.CreateImage("Shade", transform,
@@ -103,56 +133,10 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         }
 
         BuildHeader();
-
-        _nextRowTop = -48f;
-        BuildProfileSelector();
-
-        BuildSectionHeader("Energy");
-        BuildToggleRow(
-            "Energy Regen",
-            () => ModConfig.EnergyRegenEnabled.Value,
-            v => ModConfig.EnergyRegenEnabled.Value = v);
-        BuildSliderRow(
-            0.1f, 10f, "0.0",
-            () => ModConfig.EnergyRegenRate.Value,
-            v => ModConfig.EnergyRegenRate.Value = v);
-        BuildToggleRow(
-            "No Energy Drain",
-            () => ModConfig.NoEnergyDrainEnabled.Value,
-            v => ModConfig.NoEnergyDrainEnabled.Value = v);
-
-        BuildSectionHeader("Drops");
-        BuildToggleRow(
-            "Resource Drops",
-            () => ModConfig.ResourceDropsEnabled.Value,
-            v => ModConfig.ResourceDropsEnabled.Value = v);
-        BuildSliderRow(
-            1f, 10f, "0.0",
-            () => ModConfig.ResourceDropMultiplier.Value,
-            v => ModConfig.ResourceDropMultiplier.Value = v);
-        BuildToggleRow(
-            "Tech Points",
-            () => ModConfig.TechPointsEnabled.Value,
-            v => ModConfig.TechPointsEnabled.Value = v);
-        BuildSliderRow(
-            1f, 10f, "0.0",
-            () => ModConfig.TechPointsMultiplier.Value,
-            v => ModConfig.TechPointsMultiplier.Value = v);
-
-        BuildSectionHeader("Crafting");
-        BuildToggleRow(
-            "Craft Output",
-            () => ModConfig.CraftDropsEnabled.Value,
-            v => ModConfig.CraftDropsEnabled.Value = v);
-        BuildSliderRow(
-            1f, 10f, "0.0",
-            () => ModConfig.CraftDropMultiplier.Value,
-            v => ModConfig.CraftDropMultiplier.Value = v);
-
-        closeButton = MenuUi.CreateButton("Close", _panelRect, "Close",
-            new Vector2(SidePadding, 14f), new Vector2(-SidePadding, 46f),
-            new Vector2(0f, 0f), new Vector2(1f, 0f));
-        MenuUi.ApplyDialogButton(closeButton);
+        BuildContent();
+        BuildFooter();
+        // Settings sits first but is rarely what you open the menu for.
+        SelectTab(1);
     }
 
     private void BuildHeader()
@@ -176,219 +160,394 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         title.text = "A Keeper's Need 2";
     }
 
-    /// <summary>
-    /// Placeholder profile picker: `[<] name [>]`. It cycles through in-memory names
-    /// only — a stand-in for future save/load of configured option profiles.
-    /// </summary>
-    private void BuildProfileSelector()
+    private void BuildContent()
     {
-        // TODO: back these with persisted config profiles (save/load option sets).
-        string[] profiles = { "Default", "Profile 1", "Profile 2" };
-        int index = 0;
+        var go = new GameObject("Content", typeof(RectTransform));
+        _content = (RectTransform)go.transform;
+        _content.SetParent(_panelRect, false);
+        MenuUi.SetRect(_content,
+            new Vector2(SidePadding, 88f), new Vector2(-SidePadding, -44f),
+            Vector2.zero, Vector2.one);
 
-        RectTransform band = NewBand(32f, topGap: 4f);
-
-        Image field = MenuUi.CreateImage("ProfileField", band, new Color(0.2f, 0.1f, 0.07f, 1f));
-        MenuUi.SetRect(field.rectTransform,
-            new Vector2(40f, 0f), new Vector2(-40f, 0f), Vector2.zero, Vector2.one);
-        field.raycastTarget = false;
-        MenuUi.ApplyCell(field);
-
-        TextMeshProUGUI name = MenuUi.CreateText("ProfileName", band, 13f,
-            TextAlignmentOptions.Center, Color.white);
-        MenuUi.ApplyValueText(name);
-        MenuUi.Stretch(name.rectTransform);
-        name.text = profiles[index];
-
-        LazyButton prev = MenuUi.CreateButton("Prev", band, "<",
-            new Vector2(0f, 0f), new Vector2(34f, 0f), Vector2.zero, new Vector2(0f, 1f));
-        LazyButton next = MenuUi.CreateButton("Next", band, ">",
-            new Vector2(-34f, 0f), new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.one);
-
-        void Cycle(int step)
+        _pages = new RectTransform[_tabs.Length];
+        for (int i = 0; i < _tabs.Length; i++)
         {
-            index = (index + step + profiles.Length) % profiles.Length;
-            name.text = profiles[index];
+            var pageGo = new GameObject($"Page_{_tabs[i].Title}", typeof(RectTransform));
+            var page = (RectTransform)pageGo.transform;
+            page.SetParent(_content, false);
+            MenuUi.Stretch(page);
+            _tabs[i].Build(page);
+            _pages[i] = page;
+        }
+    }
+
+    private void BuildFooter()
+    {
+        BuildTabBar();
+
+        closeButton = MenuUi.CreateButton("Close", _panelRect, "Close",
+            new Vector2(SidePadding, 14f), new Vector2(-SidePadding, 46f),
+            new Vector2(0f, 0f), new Vector2(1f, 0f));
+        MenuUi.ApplyDialogButton(closeButton);
+    }
+
+    private void BuildTabBar()
+    {
+        var bar = (RectTransform)new GameObject("TabBar", typeof(RectTransform)).transform;
+        bar.SetParent(_panelRect, false);
+        MenuUi.SetRect(bar,
+            new Vector2(SidePadding, 52f), new Vector2(-SidePadding, 84f),
+            new Vector2(0f, 0f), new Vector2(1f, 0f));
+
+        // Tabs keep a fixed width and the bar scrolls sideways (drag / mouse wheel) once
+        // they outgrow it. The clear image catches drags that start between tabs.
+        Image hitArea = bar.gameObject.AddComponent<Image>();
+        hitArea.color = Color.clear;
+        bar.gameObject.AddComponent<RectMask2D>();
+
+        var strip = (RectTransform)new GameObject("Tabs", typeof(RectTransform)).transform;
+        strip.SetParent(bar, false);
+        strip.anchorMin = new Vector2(0f, 0f);
+        strip.anchorMax = new Vector2(0f, 1f);
+        strip.pivot = new Vector2(0f, 0.5f);
+        strip.sizeDelta = new Vector2(_tabs.Length * TabWidth, 0f);
+        strip.anchoredPosition = Vector2.zero;
+
+        _tabScroll = bar.gameObject.AddComponent<ScrollRect>();
+        _tabScroll.viewport = bar;
+        _tabScroll.content = strip;
+        _tabScroll.horizontal = true;
+        _tabScroll.vertical = false;
+        _tabScroll.movementType = ScrollRect.MovementType.Clamped;
+        _tabScroll.scrollSensitivity = 20f;
+
+        _tabLabels = new TextMeshProUGUI[_tabs.Length];
+        _tabNavItems = new GamepadNavigationItem[_tabs.Length];
+        for (int i = 0; i < _tabs.Length; i++)
+        {
+            int index = i;
+            LazyButton button = MenuUi.CreateButton($"Tab_{_tabs[i].Title}", strip, _tabs[i].Title,
+                new Vector2(i * TabWidth + 2f, 0f), new Vector2((i + 1) * TabWidth - 2f, 0f),
+                new Vector2(0f, 0f), new Vector2(0f, 1f));
+            TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+            if (label != null)
+            {
+                label.fontSize = 12f;
+            }
+            _tabLabels[i] = label;
+            _tabNavItems[i] = button.GetComponent<GamepadNavigationItem>();
+            button.onClick.AddListener(() => SelectTab(index));
         }
 
-        prev.onClick.AddListener(() => Cycle(-1));
-        next.onClick.AddListener(() => Cycle(1));
+        GamepadNavigationItem.OnFocusStatic += OnNavItemFocused;
     }
 
-    /// <summary>A `----- Option -----` divider: centered label flanked by rules.</summary>
-    private void BuildSectionHeader(string title)
+    private void OnNavItemFocused(GamepadNavigationItem item)
     {
-        RectTransform band = NewBand(22f, topGap: 16f);
-
-        var layout = band.gameObject.AddComponent<HorizontalLayoutGroup>();
-        layout.childControlWidth = true;
-        layout.childControlHeight = true;
-        layout.childForceExpandWidth = false;
-        layout.childForceExpandHeight = false;
-        layout.childAlignment = TextAnchor.MiddleCenter;
-        layout.spacing = 10f;
-
-        Color ruleColor = NativeUiSkin.IsReady
-            ? new Color(
-                NativeUiSkin.LabelColor.r,
-                NativeUiSkin.LabelColor.g,
-                NativeUiSkin.LabelColor.b,
-                0.35f
-            )
-            : new Color(1f, 1f, 1f, 0.25f);
-
-        AddRule(band, "RuleL", ruleColor);
-
-        TextMeshProUGUI name = MenuUi.CreateText("Section", band, 12f,
-            TextAlignmentOptions.Center, Color.white);
-        MenuUi.ApplyLabelText(name);
-        var nameElement = name.gameObject.AddComponent<LayoutElement>();
-        nameElement.flexibleWidth = 0f;
-        name.text = title;
-
-        AddRule(band, "RuleR", ruleColor);
+        int index = System.Array.IndexOf(_tabNavItems, item);
+        if (index >= 0)
+        {
+            ScrollTabIntoView(index);
+        }
     }
 
-    private static void AddRule(RectTransform parent, string name, Color color)
+    private void ScrollTabIntoView(int index)
     {
-        Image rule = MenuUi.CreateImage(name, parent, color);
-        rule.raycastTarget = false;
-        var element = rule.gameObject.AddComponent<LayoutElement>();
-        element.flexibleWidth = 1f;
-        element.minHeight = 2f;
-        element.preferredHeight = 2f;
+        RectTransform strip = _tabScroll.content;
+        float viewWidth = _tabScroll.viewport.rect.width;
+        if (viewWidth <= 0f)
+        {
+            return;
+        }
+
+        float visibleLeft = -strip.anchoredPosition.x;
+        float tabLeft = index * TabWidth;
+        float tabRight = tabLeft + TabWidth;
+        if (tabLeft < visibleLeft)
+        {
+            visibleLeft = tabLeft;
+        }
+        else if (tabRight > visibleLeft + viewWidth)
+        {
+            visibleLeft = tabRight - viewWidth;
+        }
+
+        _tabScroll.StopMovement();
+        strip.anchoredPosition = new Vector2(-visibleLeft, strip.anchoredPosition.y);
     }
 
-    /// <summary>A row with the label on the left and an On/Off toggle on the right.</summary>
-    private void BuildToggleRow(string label, Func<bool> get, Action<bool> set)
+    private void OnDestroy()
     {
-        RectTransform band = NewBand(30f, topGap: 8f);
+        GamepadNavigationItem.OnFocusStatic -= OnNavItemFocused;
+    }
 
-        TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f,
-            TextAlignmentOptions.Left, Color.white);
-        MenuUi.ApplyLabelText(name);
-        MenuUi.SetRect(name.rectTransform,
-            new Vector2(0f, 0f), new Vector2(-84f, 0f), Vector2.zero, Vector2.one);
-        name.text = label;
+    private void SelectTab(int index)
+    {
+        ScrollTabIntoView(index);
+        for (int i = 0; i < _pages.Length; i++)
+        {
+            _pages[i].gameObject.SetActive(i == index);
+            if (_tabLabels[i] != null)
+            {
+                _tabLabels[i].color = i == index ? NativeUiSkin.ValueColor : NativeUiSkin.LabelColor;
+            }
+        }
+    }
 
-        var go = new GameObject("Toggle", typeof(RectTransform));
-        go.transform.SetParent(band, false);
-        MenuUi.SetRect((RectTransform)go.transform,
-            new Vector2(-76f, 3f), new Vector2(0f, -3f),
-            new Vector2(1f, 0f), new Vector2(1f, 1f));
+    // --- UI scale (built into the Settings tab; previewed with a ghost + confirm dialog) ---
+
+    public void BuildUiScaleControl(RectTransform band)
+    {
+        TextMeshProUGUI label = MenuUi.CreateText("Label", band, 11f, TextAlignmentOptions.Left, Color.white);
+        MenuUi.ApplyLabelText(label);
+        MenuUi.SetRect(label.rectTransform,
+            new Vector2(0f, 0f), new Vector2(54f, 0f), Vector2.zero, Vector2.one);
+        label.text = "UI Scale";
+
+        var sliderArea = (RectTransform)new GameObject("Slider", typeof(RectTransform)).transform;
+        sliderArea.SetParent(band, false);
+        MenuUi.SetRect(sliderArea,
+            new Vector2(58f, 0f), new Vector2(0f, 0f), Vector2.zero, Vector2.one);
+
+        _scaleSlider = MenuPage.FillSlider(sliderArea, 0.5f, 3f, "0.0",
+            () => ModConfig.UiScale.Value, OnScaleChanged);
+        Transform valueTransform = sliderArea.Find("Value");
+        _scaleValueLabel = valueTransform != null ? valueTransform.GetComponent<TextMeshProUGUI>() : null;
+
+        var notifier = _scaleSlider.gameObject.AddComponent<PointerUpNotifier>();
+        notifier.Released += OnScaleReleased;
+    }
+
+    private void OnScaleChanged(float value)
+    {
+        // Dragging only updates the ghost; the confirm dialog waits for release.
+        if (!_scalePreviewActive)
+        {
+            EnterScalePreview();
+        }
+        UpdateScalePreview(value);
+    }
+
+    private void OnScaleReleased()
+    {
+        if (_scalePreviewActive && _scaleDialog == null)
+        {
+            BuildScaleDialog();
+            UpdateScalePreview(_scaleSlider.value);
+        }
+    }
+
+    private void EnterScalePreview()
+    {
+        _scalePreviewActive = true;
+
+        _scaleGhost = Instantiate(_panelRect.gameObject, _panelRect.parent);
+        _scaleGhost.name = "ScaleGhost";
+        CanvasGroup group = _scaleGhost.GetComponent<CanvasGroup>();
+        if (group == null)
+        {
+            group = _scaleGhost.AddComponent<CanvasGroup>();
+        }
+        group.alpha = 0.45f;
+        group.interactable = false;
+        group.blocksRaycasts = false;
+        _scaleGhost.transform.SetAsLastSibling();
+    }
+
+    private void UpdateScalePreview(float value)
+    {
+        if (_scaleGhost != null)
+        {
+            _scaleGhost.transform.localScale = new Vector3(value, value, 1f);
+        }
+        if (_scaleDialogValue != null)
+        {
+            _scaleDialogValue.text = $"UI Scale: {value:0.0}";
+        }
+    }
+
+    private void BuildScaleDialog()
+    {
+        var go = new GameObject("ScaleDialog", typeof(RectTransform));
+        var rect = (RectTransform)go.transform;
+        rect.SetParent(transform, false);
+        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
+        rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(240f, 116f);
+        rect.anchoredPosition = Vector2.zero;
 
         var bg = go.AddComponent<Image>();
-        bg.color = new Color(0.25f, 0.12f, 0.07f, 1f);
-        MenuUi.ApplyCell(bg);
-
-        var toggle = go.AddComponent<Toggle>();
-        toggle.targetGraphic = bg;
-        go.AddComponent<GamepadNavigationItem>();
-
-        TextMeshProUGUI value = MenuUi.CreateText("Value", go.transform, 13f,
-            TextAlignmentOptions.Center, Color.white);
-        MenuUi.ApplyValueText(value);
-        MenuUi.Stretch(value.rectTransform);
-
-        void Refresh(bool on)
+        bg.color = new Color(0.08f, 0.09f, 0.11f, 0.99f);
+        if (NativeUiSkin.IsReady && NativeUiSkin.FrameSprite != null)
         {
-            value.text = on ? "On" : "Off";
-        }
-
-        toggle.isOn = get();
-        Refresh(toggle.isOn);
-        toggle.onValueChanged.AddListener(on =>
-        {
-            set(on);
-            Refresh(on);
-        });
-    }
-
-    /// <summary>A full-width slider with its value overlaid in the centre.</summary>
-    private void BuildSliderRow(float min, float max, string format,
-        Func<float> get, Action<float> set)
-    {
-        RectTransform band = NewBand(24f, topGap: 6f);
-
-        var go = new GameObject("Slider", typeof(RectTransform));
-        go.transform.SetParent(band, false);
-        MenuUi.Stretch((RectTransform)go.transform);
-
-        var slider = go.AddComponent<Slider>();
-
-        Image bg = MenuUi.CreateImage("Background", go.transform, new Color(0.2f, 0.1f, 0.07f, 1f));
-        MenuUi.Stretch(bg.rectTransform);
-        if (NativeUiSkin.IsReady && NativeUiSkin.ProgressBackgroundSprite != null)
-        {
-            bg.sprite = NativeUiSkin.ProgressBackgroundSprite;
+            bg.sprite = NativeUiSkin.FrameSprite;
             bg.type = Image.Type.Sliced;
             bg.color = Color.white;
+            Image innerBg = MenuUi.CreateImage("Inner", rect, new Color(0.08f, 0.09f, 0.11f, 0.99f));
+            MenuUi.SetRect(innerBg.rectTransform,
+                new Vector2(8f, 8f), new Vector2(-8f, -8f), Vector2.zero, Vector2.one);
+            innerBg.raycastTarget = false;
         }
 
-        Image fill = MenuUi.CreateImage("Fill", go.transform, new Color(0.75f, 0.32f, 0.12f, 1f));
-        MenuUi.Stretch(fill.rectTransform);
-        if (NativeUiSkin.IsReady && NativeUiSkin.ProgressFillSprite != null)
+        TextMeshProUGUI title = MenuUi.CreateText("Title", rect, 13f, TextAlignmentOptions.Center, Color.white);
+        MenuUi.SetRect(title.rectTransform,
+            new Vector2(10f, -36f), new Vector2(-10f, -12f), new Vector2(0f, 1f), new Vector2(1f, 1f));
+        title.text = "Apply UI scale?";
+
+        _scaleDialogValue = MenuUi.CreateText("Value", rect, 12f, TextAlignmentOptions.Center, Color.white);
+        MenuUi.ApplyValueText(_scaleDialogValue);
+        MenuUi.SetRect(_scaleDialogValue.rectTransform,
+            new Vector2(10f, -60f), new Vector2(-10f, -38f), new Vector2(0f, 1f), new Vector2(1f, 1f));
+
+        LazyButton apply = MenuUi.CreateButton("Apply", rect, "Apply",
+            new Vector2(10f, 12f), new Vector2(-6f, 44f), new Vector2(0f, 0f), new Vector2(0.5f, 0f));
+        MenuUi.ApplyDialogButton(apply);
+        apply.onClick.AddListener(ApplyScale);
+
+        LazyButton cancel = MenuUi.CreateButton("Cancel", rect, "Cancel",
+            new Vector2(6f, 12f), new Vector2(-10f, 44f), new Vector2(0.5f, 0f), new Vector2(1f, 0f));
+        cancel.onClick.AddListener(CancelScale);
+
+        go.transform.SetAsLastSibling();
+        _scaleDialog = go;
+    }
+
+    private void ApplyScale()
+    {
+        ModConfig.UiScale.Value = _scaleSlider.value;
+        ApplyUiScale();
+        ExitScalePreview();
+    }
+
+    private void CancelScale()
+    {
+        float applied = ModConfig.UiScale.Value;
+        _scaleSlider.SetValueWithoutNotify(applied);
+        if (_scaleValueLabel != null)
         {
-            fill.sprite = NativeUiSkin.ProgressFillSprite;
-            fill.type = Image.Type.Sliced;
-            fill.color = Color.white;
+            _scaleValueLabel.text = applied.ToString("0.0");
         }
-        slider.fillRect = fill.rectTransform;
+        ExitScalePreview();
+    }
 
-        Image handle = MenuUi.CreateImage("Handle", go.transform, new Color(1f, 0.75f, 0.35f, 1f));
-        handle.rectTransform.sizeDelta = new Vector2(12f, NativeUiSkin.IsReady ? 18f : 24f);
-        if (NativeUiSkin.IsReady && NativeUiSkin.SliderHandleSprite != null)
+    private void ExitScalePreview()
+    {
+        _scalePreviewActive = false;
+        if (_scaleGhost != null)
         {
-            handle.sprite = NativeUiSkin.SliderHandleSprite;
-            handle.type = Image.Type.Sliced;
-            handle.color = Color.white;
-            slider.transition = Selectable.Transition.SpriteSwap;
-            slider.colors = NativeUiSkin.SliderColors;
-            slider.spriteState = NativeUiSkin.SliderSpriteState;
+            Destroy(_scaleGhost);
+            _scaleGhost = null;
         }
-        slider.targetGraphic = handle;
-        slider.handleRect = handle.rectTransform;
-        go.AddComponent<GamepadNavigationItem>();
-
-        slider.minValue = min;
-        slider.maxValue = max;
-        slider.value = get();
-
-        TextMeshProUGUI value = MenuUi.CreateText("Value", band, 12f,
-            TextAlignmentOptions.Center, Color.white);
-        MenuUi.ApplyValueText(value);
-        MenuUi.Stretch(value.rectTransform);
-
-        void Refresh(float v)
+        if (_scaleDialog != null)
         {
-            value.text = v.ToString(format);
+            Destroy(_scaleDialog);
+            _scaleDialog = null;
         }
+    }
 
-        Refresh(slider.value);
-        slider.onValueChanged.AddListener(v =>
+    private void ApplyUiScale()
+    {
+        if (_panelRect == null)
         {
-            set(v);
-            Refresh(v);
-        });
+            return;
+        }
+        float scale = Mathf.Clamp(ModConfig.UiScale.Value, 0.5f, 3f);
+        _panelRect.localScale = new Vector3(scale, scale, 1f);
+    }
+
+    // --- Hotkey rebind (capture driven per-frame from MenuModule.Tick via TickInput) ---
+
+    public void BuildRebindRow(RectTransform band)
+    {
+        TextMeshProUGUI label = MenuUi.CreateText("Label", band, 13f, TextAlignmentOptions.Left, Color.white);
+        MenuUi.ApplyLabelText(label);
+        MenuUi.SetRect(label.rectTransform,
+            new Vector2(0f, 0f), new Vector2(-114f, 0f), Vector2.zero, Vector2.one);
+        label.text = "Menu Key";
+
+        LazyButton button = MenuUi.CreateButton("Rebind", band, ModConfig.MenuHotkey.Value.ToString(),
+            new Vector2(-110f, 2f), new Vector2(0f, -2f), new Vector2(1f, 0f), new Vector2(1f, 1f));
+        _rebindButtonLabel = button.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (_rebindButtonLabel != null)
+        {
+            _rebindButtonLabel.fontSize = 12f;
+        }
+        button.onClick.AddListener(BeginRebind);
+    }
+
+    private void BeginRebind()
+    {
+        _rebindListening = true;
+        if (_rebindButtonLabel != null)
+        {
+            _rebindButtonLabel.text = "Press a key…";
+        }
+    }
+
+    private void CompleteRebind(KeyCode key)
+    {
+        ModConfig.MenuHotkey.Value = key;
+        _rebindListening = false;
+        if (_rebindButtonLabel != null)
+        {
+            _rebindButtonLabel.text = key.ToString();
+        }
+    }
+
+    private void CancelRebind()
+    {
+        _rebindListening = false;
+        if (_rebindButtonLabel != null)
+        {
+            _rebindButtonLabel.text = ModConfig.MenuHotkey.Value.ToString();
+        }
     }
 
     /// <summary>
-    /// Creates a full-width row of the given height at the current vertical cursor
-    /// and advances the cursor (including a gap above the row).
+    /// Per-frame input hook, called from <c>MenuModule.Tick</c>. Returns true while a rebind is
+    /// listening so the caller doesn't also treat the keypress as a menu toggle.
     /// </summary>
-    private RectTransform NewBand(float height, float topGap)
+    public bool TickInput()
     {
-        _nextRowTop -= topGap;
+        if (!_rebindListening)
+        {
+            return false;
+        }
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            CancelRebind();
+            return true;
+        }
+        foreach (KeyCode key in AllKeys)
+        {
+            if (key == KeyCode.None || key == KeyCode.Escape)
+            {
+                continue;
+            }
+            int code = (int)key;
+            if (code >= (int)KeyCode.Mouse0 && code <= (int)KeyCode.Mouse6)
+            {
+                continue;
+            }
+            if (Input.GetKeyDown(key))
+            {
+                CompleteRebind(key);
+                return true;
+            }
+        }
+        return true;
+    }
 
-        var go = new GameObject("Band", typeof(RectTransform));
-        var band = (RectTransform)go.transform;
-        band.SetParent(_panelRect, false);
-        MenuUi.SetRect(band,
-            new Vector2(SidePadding, _nextRowTop - height), new Vector2(-SidePadding, _nextRowTop),
-            new Vector2(0f, 1f), new Vector2(1f, 1f));
-
-        _nextRowTop -= height;
-        return band;
+    private void ResetTransientState()
+    {
+        if (_scalePreviewActive)
+        {
+            CancelScale();
+        }
+        if (_rebindListening)
+        {
+            CancelRebind();
+        }
     }
 
     public override void Open(LazyWidgetDataBase data)
@@ -399,6 +558,8 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         {
             gameObject.SetActive(true);
         }
+        ResetTransientState();
+        ApplyUiScale();
         base.Open(data);
     }
 

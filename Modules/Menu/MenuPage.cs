@@ -1,0 +1,217 @@
+using System;
+using AKeepersNeed2.Shared.Ui;
+using LazyBearTechnology;
+using TMPro;
+using UnityEngine;
+using UnityEngine.UI;
+
+namespace AKeepersNeed2.Modules.Menu;
+
+/// <summary>
+/// Vertical layout helper for a tab's content: stacks section dividers, toggle rows and
+/// slider rows from the top down inside a content <see cref="RectTransform"/>. The static
+/// <c>Fill*</c> builders are reused for one-off controls outside a page (e.g. the footer).
+/// </summary>
+internal sealed class MenuPage
+{
+    private readonly RectTransform _content;
+    private float _cursorTop;
+
+    public MenuPage(RectTransform content)
+    {
+        _content = content;
+    }
+
+    /// <summary>A `----- Title -----` divider: centered label flanked by rules.</summary>
+    public void SectionHeader(string title)
+    {
+        RectTransform band = NewBand(22f, 16f);
+
+        var layout = band.gameObject.AddComponent<HorizontalLayoutGroup>();
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = false;
+        layout.childForceExpandHeight = false;
+        layout.childAlignment = TextAnchor.MiddleCenter;
+        layout.spacing = 10f;
+
+        Color ruleColor = NativeUiSkin.IsReady
+            ? new Color(
+                NativeUiSkin.LabelColor.r,
+                NativeUiSkin.LabelColor.g,
+                NativeUiSkin.LabelColor.b,
+                0.35f
+            )
+            : new Color(1f, 1f, 1f, 0.25f);
+
+        AddRule(band, "RuleL", ruleColor);
+
+        TextMeshProUGUI name = MenuUi.CreateText("Section", band, 12f,
+            TextAlignmentOptions.Center, Color.white);
+        MenuUi.ApplyLabelText(name);
+        var element = name.gameObject.AddComponent<LayoutElement>();
+        element.flexibleWidth = 0f;
+        name.text = title;
+
+        AddRule(band, "RuleR", ruleColor);
+    }
+
+    /// <summary>A row with the label on the left and an On/Off toggle on the right.</summary>
+    public void ToggleRow(string label, Func<bool> get, Action<bool> set)
+    {
+        RectTransform band = NewBand(30f, 8f);
+
+        TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f,
+            TextAlignmentOptions.Left, Color.white);
+        MenuUi.ApplyLabelText(name);
+        MenuUi.SetRect(name.rectTransform,
+            new Vector2(0f, 0f), new Vector2(-84f, 0f), Vector2.zero, Vector2.one);
+        name.text = label;
+
+        var go = new GameObject("Toggle", typeof(RectTransform));
+        var rect = (RectTransform)go.transform;
+        rect.SetParent(band, false);
+        MenuUi.SetRect(rect,
+            new Vector2(-76f, 3f), new Vector2(0f, -3f),
+            new Vector2(1f, 0f), new Vector2(1f, 1f));
+        FillToggle(rect, get, set);
+    }
+
+    /// <summary>A full-width slider with its value overlaid in the centre.</summary>
+    public void SliderRow(float min, float max, string format, Func<float> get, Action<float> set)
+    {
+        RectTransform band = NewBand(24f, 6f);
+        FillSlider(band, min, max, format, get, set);
+    }
+
+    /// <summary>Reserves a full-width row at the cursor and returns it for custom content.</summary>
+    public RectTransform Band(float height, float topGap)
+    {
+        return NewBand(height, topGap);
+    }
+
+    /// <summary>Builds a toggle (background + On/Off label) that fills <paramref name="rect"/>.</summary>
+    public static void FillToggle(RectTransform rect, Func<bool> get, Action<bool> set)
+    {
+        var bg = rect.gameObject.AddComponent<Image>();
+        bg.color = new Color(0.25f, 0.12f, 0.07f, 1f);
+        MenuUi.ApplyCell(bg);
+
+        var toggle = rect.gameObject.AddComponent<Toggle>();
+        toggle.targetGraphic = bg;
+        rect.gameObject.AddComponent<GamepadNavigationItem>();
+
+        TextMeshProUGUI value = MenuUi.CreateText("Value", rect, 13f,
+            TextAlignmentOptions.Center, Color.white);
+        MenuUi.ApplyValueText(value);
+        MenuUi.Stretch(value.rectTransform);
+
+        void Refresh(bool on)
+        {
+            value.text = on ? "On" : "Off";
+        }
+
+        toggle.isOn = get();
+        Refresh(toggle.isOn);
+        toggle.onValueChanged.AddListener(on =>
+        {
+            set(on);
+            Refresh(on);
+        });
+    }
+
+    /// <summary>Builds a slider with a centered value label that fills <paramref name="parent"/>.</summary>
+    public static Slider FillSlider(RectTransform parent, float min, float max, string format,
+        Func<float> get, Action<float> set)
+    {
+        var go = new GameObject("Slider", typeof(RectTransform));
+        go.transform.SetParent(parent, false);
+        MenuUi.Stretch((RectTransform)go.transform);
+        var slider = go.AddComponent<Slider>();
+
+        Image bg = MenuUi.CreateImage("Background", go.transform, new Color(0.2f, 0.1f, 0.07f, 1f));
+        MenuUi.Stretch(bg.rectTransform);
+        if (NativeUiSkin.IsReady && NativeUiSkin.ProgressBackgroundSprite != null)
+        {
+            bg.sprite = NativeUiSkin.ProgressBackgroundSprite;
+            bg.type = Image.Type.Sliced;
+            bg.color = Color.white;
+        }
+
+        Image fill = MenuUi.CreateImage("Fill", go.transform, new Color(0.75f, 0.32f, 0.12f, 1f));
+        MenuUi.Stretch(fill.rectTransform);
+        if (NativeUiSkin.IsReady && NativeUiSkin.ProgressFillSprite != null)
+        {
+            fill.sprite = NativeUiSkin.ProgressFillSprite;
+            fill.type = Image.Type.Sliced;
+            fill.color = Color.white;
+        }
+        slider.fillRect = fill.rectTransform;
+
+        Image handle = MenuUi.CreateImage("Handle", go.transform, new Color(1f, 0.75f, 0.35f, 1f));
+        handle.rectTransform.sizeDelta = new Vector2(12f, NativeUiSkin.IsReady ? 18f : 24f);
+        if (NativeUiSkin.IsReady && NativeUiSkin.SliderHandleSprite != null)
+        {
+            handle.sprite = NativeUiSkin.SliderHandleSprite;
+            handle.type = Image.Type.Sliced;
+            handle.color = Color.white;
+            slider.transition = Selectable.Transition.SpriteSwap;
+            slider.colors = NativeUiSkin.SliderColors;
+            slider.spriteState = NativeUiSkin.SliderSpriteState;
+        }
+        slider.targetGraphic = handle;
+        slider.handleRect = handle.rectTransform;
+        go.AddComponent<GamepadNavigationItem>();
+
+        slider.minValue = min;
+        slider.maxValue = max;
+        slider.value = get();
+
+        TextMeshProUGUI value = MenuUi.CreateText("Value", parent, 12f,
+            TextAlignmentOptions.Center, Color.white);
+        MenuUi.ApplyValueText(value);
+        MenuUi.Stretch(value.rectTransform);
+
+        void Refresh(float v)
+        {
+            value.text = v.ToString(format);
+        }
+
+        Refresh(slider.value);
+        slider.onValueChanged.AddListener(v =>
+        {
+            set(v);
+            Refresh(v);
+        });
+        return slider;
+    }
+
+    private static void AddRule(RectTransform parent, string name, Color color)
+    {
+        Image rule = MenuUi.CreateImage(name, parent, color);
+        rule.raycastTarget = false;
+        var element = rule.gameObject.AddComponent<LayoutElement>();
+        element.flexibleWidth = 1f;
+        element.minHeight = 2f;
+        element.preferredHeight = 2f;
+    }
+
+    /// <summary>
+    /// Creates a full-width row of the given height at the current vertical cursor (relative
+    /// to the content's top) and advances the cursor past it, including a gap above.
+    /// </summary>
+    private RectTransform NewBand(float height, float topGap)
+    {
+        _cursorTop -= topGap;
+
+        var go = new GameObject("Band", typeof(RectTransform));
+        var band = (RectTransform)go.transform;
+        band.SetParent(_content, false);
+        MenuUi.SetRect(band,
+            new Vector2(0f, _cursorTop - height), new Vector2(0f, _cursorTop),
+            new Vector2(0f, 1f), new Vector2(1f, 1f));
+
+        _cursorTop -= height;
+        return band;
+    }
+}
