@@ -1,18 +1,39 @@
+using System.IO;
+using BepInEx;
 using BepInEx.Configuration;
 using UnityEngine;
 
 namespace AKeepersNeed2;
 
 /// <summary>
-/// Central config for the mod's playground features. Values persist in
-/// BepInEx/config/&lt;GUID&gt;.cfg and are the single source of truth that both the
-/// in-game menu and (future) Harmony patches read/write.
+/// Central config for the mod's playground features — the single source of truth that both
+/// the in-game menu and the Harmony patches read/write. Global settings (menu, profile keys)
+/// persist in BepInEx/config/&lt;GUID&gt;.cfg. Gameplay settings live in the in-memory
+/// <see cref="ProfileSettings"/> file, which <c>Shared.Profiles.ProfileStore</c> fills from and
+/// writes back to the active profile's own .cfg.
 /// </summary>
 internal static class ModConfig
 {
+    public static readonly string ProfilesDirectory =
+        Path.Combine(Path.Combine(Paths.ConfigPath, "AKeepersNeed2"), "profiles");
+
+    /// <summary>The plugin's main .cfg (global settings only).</summary>
+    public static ConfigFile Main;
+
+    /// <summary>
+    /// Live gameplay settings. Never saved to disk itself — it only mirrors the active
+    /// profile, so every gameplay entry must be bound here.
+    /// </summary>
+    public static ConfigFile ProfileSettings;
+
     // --- Menu ---
     public static ConfigEntry<KeyCode> MenuHotkey;
     public static ConfigEntry<float> UiScale; // menu size multiplier, 0.5 .. 3.0
+
+    // --- Profiles ---
+    public static ConfigEntry<string> ActiveProfile;
+    public static ConfigEntry<KeyCode> PreviousProfileKey;
+    public static ConfigEntry<KeyCode> NextProfileKey;
 
     // --- Energy regen (passive, while not sleeping) ---
     public static ConfigEntry<bool> EnergyRegenEnabled;
@@ -39,12 +60,31 @@ internal static class ModConfig
 
     public static void Init(ConfigFile config)
     {
+        Main = config;
+
         MenuHotkey = config.Bind("Menu", "Hotkey", KeyCode.F1,
             "Key that toggles the mod menu.");
         UiScale = config.Bind("Menu", "UiScale", 1f,
             new ConfigDescription("Menu size multiplier (1 = game default).",
                 new AcceptableValueRange<float>(0.5f, 3f)));
 
+        ActiveProfile = config.Bind("Profiles", "Active", "Default",
+            "Name of the active settings profile (a file in config/AKeepersNeed2/profiles).");
+        PreviousProfileKey = config.Bind("Profiles", "PreviousKey", KeyCode.F2,
+            "Key that switches to the previous profile.");
+        NextProfileKey = config.Bind("Profiles", "NextKey", KeyCode.F3,
+            "Key that switches to the next profile.");
+
+        // The path is never written: SaveOnConfigSet is off and Save() is never called.
+        ProfileSettings = new ConfigFile(Path.Combine(ProfilesDirectory, ".live"), false)
+        {
+            SaveOnConfigSet = false,
+        };
+        BindProfileSettings(ProfileSettings);
+    }
+
+    private static void BindProfileSettings(ConfigFile config)
+    {
         EnergyRegenEnabled = config.Bind("EnergyRegen", "Enabled", false,
             "Passively regenerate energy while not sleeping.");
         EnergyRegenRate = config.Bind("EnergyRegen", "RatePer5s", 1f,

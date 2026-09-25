@@ -49,6 +49,11 @@ internal sealed class ItemsTab : IMenuTab
         Refilter();
     }
 
+    // Nothing here is backed by config.
+    public void Refresh()
+    {
+    }
+
     private void BuildCache()
     {
         List<ItemDef> defs = GameBalance.Me?.itemDefs;

@@ -1,4 +1,5 @@
-using System.Reflection;
+using System;
+using AKeepersNeed2.Shared.Profiles;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
 using TMPro;
@@ -10,44 +11,46 @@ namespace AKeepersNeed2.Modules.Menu;
 /// <summary>
 /// The mod's menu: a from-scratch uGUI window styled from the game's own assets
 /// (<see cref="NativeUiSkin"/>) and subclassing the game's <c>LazyWindow</c> so it joins the
-/// native window stack/input. A title header and a footer (bottom tab bar + Close) frame a
-/// content area that swaps between <see cref="IMenuTab"/> pages. The Settings tab's UI-scale
-/// and hotkey-rebind controls are built here because they need window state (a scaling ghost
-/// + confirm dialog, and per-frame key capture). See docs/UI.md.
+/// native window stack/input. A title header (showing the active profile) and a footer (bottom
+/// tab bar + Close) frame a content area that swaps between <see cref="IMenuTab"/> pages. It
+/// also owns the state tabs share: the UI-scale ghost + confirm dialog, the
+/// <see cref="KeyRebinder"/>, and the one open <see cref="MenuDialog"/>. Tabs re-read their
+/// values on open and whenever <see cref="ProfileStore"/> changes. See docs/UI.md.
 /// </summary>
 internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 {
     private const float PanelWidth = 340f;
     private const float SidePadding = 20f;
     private const float TabWidth = 74f;
+    private const string MenuTitle = "A Keeper's Need 2";
 
-    private static readonly KeyCode[] AllKeys = (KeyCode[])System.Enum.GetValues(typeof(KeyCode));
+    private readonly KeyRebinder _rebinder = new KeyRebinder();
 
     private IMenuTab[] _tabs;
     private RectTransform _panelRect;
     private RectTransform _content;
     private RectTransform[] _pages;
+    private TextMeshProUGUI _title;
     private TextMeshProUGUI[] _tabLabels;
     private GamepadNavigationItem[] _tabNavItems;
     private ScrollRect _tabScroll;
+    private GameObject _dialog;
 
     // UI-scale preview state.
     private Slider _scaleSlider;
-    private TextMeshProUGUI _scaleValueLabel;
+    private Action _scaleSync;
     private bool _scalePreviewActive;
     private GameObject _scaleGhost;
     private GameObject _scaleDialog;
     private TextMeshProUGUI _scaleDialogValue;
 
-    // Hotkey rebind state.
-    private TextMeshProUGUI _rebindButtonLabel;
-    private bool _rebindListening;
+    public KeyRebinder Rebinder => _rebinder;
 
     public static AKNMenuWindow CreateInstance()
     {
         NativeUiSkin.TryCapture();
 
-        Transform uiRoot = FindUiRoot();
+        Transform uiRoot = MenuUi.FindUiRoot();
         if (uiRoot == null)
         {
             Plugin.Logger.LogWarning("[Menu] no UI root found — open the menu once you're past the loading screen.");
@@ -68,26 +71,6 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         window.BuildUi();
         window.Init();
         return window;
-    }
-
-    private static Transform FindUiRoot()
-    {
-        GUIElements gui = GUIElements.Instance;
-        if (gui == null)
-        {
-            return null;
-        }
-
-        FieldInfo fitterField = typeof(GUIElements).GetField(
-            "uiFitter",
-            BindingFlags.Instance | BindingFlags.NonPublic
-        );
-
-        if (fitterField?.GetValue(gui) is Component fitter)
-        {
-            return fitter.transform;
-        }
-        return gui.Root;
     }
 
     private void BuildUi()
@@ -137,6 +120,20 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         BuildFooter();
         // Settings sits first but is rarely what you open the menu for.
         SelectTab(1);
+
+        ProfileStore.Changed += RefreshAll;
+    }
+
+    private void RefreshAll()
+    {
+        foreach (IMenuTab tab in _tabs)
+        {
+            tab.Refresh();
+        }
+        Profile active = ProfileStore.Active;
+        _title.text = active != null
+            ? $"{MenuTitle} — {active.Name}"
+            : MenuTitle;
     }
 
     private void BuildHeader()
@@ -153,11 +150,14 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             header.color = Color.white;
         }
 
-        TextMeshProUGUI title = MenuUi.CreateText("Title", header.rectTransform,
+        _title = MenuUi.CreateText("Title", header.rectTransform,
             NativeUiSkin.IsReady ? 13f : 18f, TextAlignmentOptions.Center, Color.white);
-        MenuUi.Stretch(title.rectTransform);
-        MenuUi.ApplyHeaderText(title);
-        title.text = "A Keeper's Need 2";
+        MenuUi.SetRect(_title.rectTransform,
+            new Vector2(10f, 0f), new Vector2(-10f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.ApplyHeaderText(_title);
+        _title.textWrappingMode = TextWrappingModes.NoWrap;
+        _title.overflowMode = TextOverflowModes.Ellipsis;
+        _title.text = MenuTitle;
     }
 
     private void BuildContent()
@@ -244,7 +244,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 
     private void OnNavItemFocused(GamepadNavigationItem item)
     {
-        int index = System.Array.IndexOf(_tabNavItems, item);
+        int index = Array.IndexOf(_tabNavItems, item);
         if (index >= 0)
         {
             ScrollTabIntoView(index);
@@ -279,6 +279,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private void OnDestroy()
     {
         GamepadNavigationItem.OnFocusStatic -= OnNavItemFocused;
+        ProfileStore.Changed -= RefreshAll;
     }
 
     private void SelectTab(int index)
@@ -310,9 +311,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new Vector2(58f, 0f), new Vector2(0f, 0f), Vector2.zero, Vector2.one);
 
         _scaleSlider = MenuPage.FillSlider(sliderArea, 0.5f, 3f, "0.0",
-            () => ModConfig.UiScale.Value, OnScaleChanged);
-        Transform valueTransform = sliderArea.Find("Value");
-        _scaleValueLabel = valueTransform != null ? valueTransform.GetComponent<TextMeshProUGUI>() : null;
+            () => ModConfig.UiScale.Value, OnScaleChanged, out _scaleSync);
 
         var notifier = _scaleSlider.gameObject.AddComponent<PointerUpNotifier>();
         notifier.Released += OnScaleReleased;
@@ -368,31 +367,9 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 
     private void BuildScaleDialog()
     {
-        var go = new GameObject("ScaleDialog", typeof(RectTransform));
-        var rect = (RectTransform)go.transform;
-        rect.SetParent(transform, false);
-        rect.anchorMin = rect.anchorMax = new Vector2(0.5f, 0.5f);
-        rect.pivot = new Vector2(0.5f, 0.5f);
-        rect.sizeDelta = new Vector2(240f, 116f);
-        rect.anchoredPosition = Vector2.zero;
-
-        var bg = go.AddComponent<Image>();
-        bg.color = new Color(0.08f, 0.09f, 0.11f, 0.99f);
-        if (NativeUiSkin.IsReady && NativeUiSkin.FrameSprite != null)
-        {
-            bg.sprite = NativeUiSkin.FrameSprite;
-            bg.type = Image.Type.Sliced;
-            bg.color = Color.white;
-            Image innerBg = MenuUi.CreateImage("Inner", rect, new Color(0.08f, 0.09f, 0.11f, 0.99f));
-            MenuUi.SetRect(innerBg.rectTransform,
-                new Vector2(8f, 8f), new Vector2(-8f, -8f), Vector2.zero, Vector2.one);
-            innerBg.raycastTarget = false;
-        }
-
-        TextMeshProUGUI title = MenuUi.CreateText("Title", rect, 13f, TextAlignmentOptions.Center, Color.white);
-        MenuUi.SetRect(title.rectTransform,
-            new Vector2(10f, -36f), new Vector2(-10f, -12f), new Vector2(0f, 1f), new Vector2(1f, 1f));
-        title.text = "Apply UI scale?";
+        // Not modal: the slider stays draggable while the dialog is up.
+        GameObject go = MenuDialog.CreateFrame(transform, "ScaleDialog", new Vector2(240f, 116f),
+            "Apply UI scale?", false, out RectTransform rect);
 
         _scaleDialogValue = MenuUi.CreateText("Value", rect, 12f, TextAlignmentOptions.Center, Color.white);
         MenuUi.ApplyValueText(_scaleDialogValue);
@@ -408,7 +385,6 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new Vector2(6f, 12f), new Vector2(-10f, 44f), new Vector2(0.5f, 0f), new Vector2(1f, 0f));
         cancel.onClick.AddListener(CancelScale);
 
-        go.transform.SetAsLastSibling();
         _scaleDialog = go;
     }
 
@@ -421,12 +397,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 
     private void CancelScale()
     {
-        float applied = ModConfig.UiScale.Value;
-        _scaleSlider.SetValueWithoutNotify(applied);
-        if (_scaleValueLabel != null)
-        {
-            _scaleValueLabel.text = applied.ToString("0.0");
-        }
+        _scaleSync();
         ExitScalePreview();
     }
 
@@ -455,51 +426,26 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         _panelRect.localScale = new Vector3(scale, scale, 1f);
     }
 
-    // --- Hotkey rebind (capture driven per-frame from MenuModule.Tick via TickInput) ---
+    // --- Dialogs (one at a time; closed with the window) ---
 
-    public void BuildRebindRow(RectTransform band)
+    public void ShowConfirm(string title, string message, string confirmLabel, Action onConfirm)
     {
-        TextMeshProUGUI label = MenuUi.CreateText("Label", band, 13f, TextAlignmentOptions.Left, Color.white);
-        MenuUi.ApplyLabelText(label);
-        MenuUi.SetRect(label.rectTransform,
-            new Vector2(0f, 0f), new Vector2(-114f, 0f), Vector2.zero, Vector2.one);
-        label.text = "Menu Key";
-
-        LazyButton button = MenuUi.CreateButton("Rebind", band, ModConfig.MenuHotkey.Value.ToString(),
-            new Vector2(-110f, 2f), new Vector2(0f, -2f), new Vector2(1f, 0f), new Vector2(1f, 1f));
-        _rebindButtonLabel = button.GetComponentInChildren<TextMeshProUGUI>(true);
-        if (_rebindButtonLabel != null)
-        {
-            _rebindButtonLabel.fontSize = 12f;
-        }
-        button.onClick.AddListener(BeginRebind);
+        CloseDialog();
+        _dialog = MenuDialog.ShowConfirm(transform, title, message, confirmLabel, onConfirm);
     }
 
-    private void BeginRebind()
+    public void ShowNamePrompt(string title, string initial, Func<string, string> submit)
     {
-        _rebindListening = true;
-        if (_rebindButtonLabel != null)
-        {
-            _rebindButtonLabel.text = "Press a key…";
-        }
+        CloseDialog();
+        _dialog = MenuDialog.ShowNamePrompt(transform, title, initial, ProfileStore.MaxNameLength, submit);
     }
 
-    private void CompleteRebind(KeyCode key)
+    private void CloseDialog()
     {
-        ModConfig.MenuHotkey.Value = key;
-        _rebindListening = false;
-        if (_rebindButtonLabel != null)
+        if (_dialog != null)
         {
-            _rebindButtonLabel.text = key.ToString();
-        }
-    }
-
-    private void CancelRebind()
-    {
-        _rebindListening = false;
-        if (_rebindButtonLabel != null)
-        {
-            _rebindButtonLabel.text = ModConfig.MenuHotkey.Value.ToString();
+            Destroy(_dialog);
+            _dialog = null;
         }
     }
 
@@ -509,33 +455,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     /// </summary>
     public bool TickInput()
     {
-        if (!_rebindListening)
-        {
-            return false;
-        }
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            CancelRebind();
-            return true;
-        }
-        foreach (KeyCode key in AllKeys)
-        {
-            if (key == KeyCode.None || key == KeyCode.Escape)
-            {
-                continue;
-            }
-            int code = (int)key;
-            if (code >= (int)KeyCode.Mouse0 && code <= (int)KeyCode.Mouse6)
-            {
-                continue;
-            }
-            if (Input.GetKeyDown(key))
-            {
-                CompleteRebind(key);
-                return true;
-            }
-        }
-        return true;
+        return _rebinder.Tick();
     }
 
     private void ResetTransientState()
@@ -544,10 +464,15 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         {
             CancelScale();
         }
-        if (_rebindListening)
-        {
-            CancelRebind();
-        }
+        _rebinder.Cancel();
+        CloseDialog();
+    }
+
+    // Every close path (Close button, Back, hotkey) funnels through here.
+    protected override void HideWindow()
+    {
+        ResetTransientState();
+        base.HideWindow();
     }
 
     public override void Open(LazyWidgetDataBase data)
@@ -559,6 +484,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             gameObject.SetActive(true);
         }
         ResetTransientState();
+        RefreshAll();
         ApplyUiScale();
         base.Open(data);
     }

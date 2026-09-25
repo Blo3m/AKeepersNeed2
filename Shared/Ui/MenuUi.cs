@@ -1,3 +1,4 @@
+using System.Reflection;
 using LazyBearTechnology;
 using TMPro;
 using UnityEngine;
@@ -12,6 +13,30 @@ namespace AKeepersNeed2.Shared.Ui;
 /// </summary>
 internal static class MenuUi
 {
+    /// <summary>
+    /// The transform the game's windows live under (the private <c>GUIElements.uiFitter</c>,
+    /// falling back to <c>GUIElements.Root</c>). Null before the game UI exists.
+    /// </summary>
+    public static Transform FindUiRoot()
+    {
+        GUIElements gui = GUIElements.Instance;
+        if (gui == null)
+        {
+            return null;
+        }
+
+        FieldInfo fitterField = typeof(GUIElements).GetField(
+            "uiFitter",
+            BindingFlags.Instance | BindingFlags.NonPublic
+        );
+
+        if (fitterField?.GetValue(gui) is Component fitter)
+        {
+            return fitter.transform;
+        }
+        return gui.Root;
+    }
+
     public static Image CreateImage(string name, Transform parent, Color color)
     {
         var go = new GameObject(name, typeof(RectTransform));

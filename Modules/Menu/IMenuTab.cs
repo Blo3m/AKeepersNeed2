@@ -13,4 +13,10 @@ internal interface IMenuTab
 
     /// <summary>Build the tab's content into <paramref name="content"/> (already inset/padded).</summary>
     void Build(RectTransform content);
+
+    /// <summary>
+    /// Re-read displayed values from config. Called when the menu opens and after a profile
+    /// switch or reset changes the values behind the controls.
+    /// </summary>
+    void Refresh();
 }

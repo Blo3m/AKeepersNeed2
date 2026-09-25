@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
 using TMPro;
@@ -11,15 +12,33 @@ namespace AKeepersNeed2.Modules.Menu;
 /// Vertical layout helper for a tab's content: stacks section dividers, toggle rows and
 /// slider rows from the top down inside a content <see cref="RectTransform"/>. The static
 /// <c>Fill*</c> builders are reused for one-off controls outside a page (e.g. the footer).
+/// Controls only read their value when built, so <see cref="Sync"/> re-reads them after the
+/// underlying config changes behind their back (e.g. a profile switch).
 /// </summary>
 internal sealed class MenuPage
 {
     private readonly RectTransform _content;
+    private readonly List<Action> _syncs = new List<Action>();
     private float _cursorTop;
 
     public MenuPage(RectTransform content)
     {
         _content = content;
+    }
+
+    /// <summary>Re-reads every row's value without firing its setter.</summary>
+    public void Sync()
+    {
+        foreach (Action sync in _syncs)
+        {
+            sync();
+        }
+    }
+
+    /// <summary>Includes a custom control's re-read in <see cref="Sync"/>.</summary>
+    public void AddSync(Action sync)
+    {
+        _syncs.Add(sync);
     }
 
     /// <summary>A `----- Title -----` divider: centered label flanked by rules.</summary>
@@ -74,14 +93,15 @@ internal sealed class MenuPage
         MenuUi.SetRect(rect,
             new Vector2(-76f, 3f), new Vector2(0f, -3f),
             new Vector2(1f, 0f), new Vector2(1f, 1f));
-        FillToggle(rect, get, set);
+        _syncs.Add(FillToggle(rect, get, set));
     }
 
     /// <summary>A full-width slider with its value overlaid in the centre.</summary>
     public void SliderRow(float min, float max, string format, Func<float> get, Action<float> set)
     {
         RectTransform band = NewBand(24f, 6f);
-        FillSlider(band, min, max, format, get, set);
+        FillSlider(band, min, max, format, get, set, out Action sync);
+        _syncs.Add(sync);
     }
 
     /// <summary>Reserves a full-width row at the cursor and returns it for custom content.</summary>
@@ -90,8 +110,11 @@ internal sealed class MenuPage
         return NewBand(height, topGap);
     }
 
-    /// <summary>Builds a toggle (background + On/Off label) that fills <paramref name="rect"/>.</summary>
-    public static void FillToggle(RectTransform rect, Func<bool> get, Action<bool> set)
+    /// <summary>
+    /// Builds a toggle (background + On/Off label) that fills <paramref name="rect"/>. Returns
+    /// an action that re-reads <paramref name="get"/> without calling <paramref name="set"/>.
+    /// </summary>
+    public static Action FillToggle(RectTransform rect, Func<bool> get, Action<bool> set)
     {
         var bg = rect.gameObject.AddComponent<Image>();
         bg.color = new Color(0.25f, 0.12f, 0.07f, 1f);
@@ -118,11 +141,20 @@ internal sealed class MenuPage
             set(on);
             Refresh(on);
         });
+
+        return () =>
+        {
+            toggle.SetIsOnWithoutNotify(get());
+            Refresh(toggle.isOn);
+        };
     }
 
-    /// <summary>Builds a slider with a centered value label that fills <paramref name="parent"/>.</summary>
+    /// <summary>
+    /// Builds a slider with a centered value label that fills <paramref name="parent"/>.
+    /// <paramref name="sync"/> re-reads <paramref name="get"/> without calling <paramref name="set"/>.
+    /// </summary>
     public static Slider FillSlider(RectTransform parent, float min, float max, string format,
-        Func<float> get, Action<float> set)
+        Func<float> get, Action<float> set, out Action sync)
     {
         var go = new GameObject("Slider", typeof(RectTransform));
         go.transform.SetParent(parent, false);
@@ -183,6 +215,12 @@ internal sealed class MenuPage
             set(v);
             Refresh(v);
         });
+
+        sync = () =>
+        {
+            slider.SetValueWithoutNotify(get());
+            Refresh(slider.value);
+        };
         return slider;
     }
 
