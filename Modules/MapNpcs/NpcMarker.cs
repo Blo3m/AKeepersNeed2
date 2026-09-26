@@ -72,6 +72,6 @@ internal sealed class NpcMarker :
         {
             return;
         }
-        MapTeleporter.TeleportNear(Wgo.Position);
+        MapTeleportHelper.TeleportNear(Wgo.Position);
     }
 }

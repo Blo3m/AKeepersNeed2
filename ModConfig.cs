@@ -69,6 +69,10 @@ internal static class ModConfig
     public static ConfigEntry<bool> MapNpcsTeleportEnabled;
     public static ConfigEntry<bool> MapTeleportEnabled;
 
+    // --- Teleport to cursor (in-world, any scene) ---
+    public static ConfigEntry<bool> TeleportToCursorEnabled;
+    public static ConfigEntry<KeyCode> TeleportToCursorKey;
+
     public static void Init(ConfigFile config)
     {
         MenuHotkey = config.Bind("Menu", "Hotkey", KeyCode.F1,
@@ -146,6 +150,11 @@ internal static class ModConfig
 
         MapTeleportEnabled = config.Bind("MapTeleport", "Enabled", false,
             "Shift-click the world map to teleport to the nearest walkable spot under the cursor.");
+
+        TeleportToCursorEnabled = config.Bind("TeleportToCursor", "Enabled", false,
+            "Press the teleport key to teleport to the nearest walkable spot under the cursor.");
+        TeleportToCursorKey = config.Bind("TeleportToCursor", "Key", KeyCode.Mouse2,
+            "Key that teleports the player to the cursor (None = unbound).");
     }
 
     // --- Mapping helpers between a UISlider's 0..100 space and a multiplier ---

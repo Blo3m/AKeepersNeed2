@@ -74,22 +74,19 @@ internal static class MenuDialog
         string title,
         string message,
         string confirmLabel,
-        Action onConfirm
+        Action onConfirm,
+        float height = 132f
     )
     {
         GameObject root = CreateFrame(
             parent,
             "ConfirmDialog",
-            new Vector2(260f, 132f),
+            new Vector2(260f, height),
             title,
             true,
             out RectTransform frame
         );
-
-        TextMeshProUGUI body = MenuUi.CreateText("Message", frame, 12f, TextAlignmentOptions.Center);
-        MenuUi.ApplyLabelText(body);
-        MenuUi.SetRect(body.rectTransform, Anchors.Fill, new Vector2(14f, 50f), new Vector2(-14f, -38f));
-        body.text = message;
+        AddMessage(frame, message);
 
         AddButtons(
             frame,
@@ -102,6 +99,40 @@ internal static class MenuDialog
             () => UnityEngine.Object.Destroy(root)
         );
         return root;
+    }
+
+    /// <summary>An informational dialog with a single OK button.</summary>
+    public static GameObject ShowMessage(Transform parent, string title, string message, float height = 132f)
+    {
+        GameObject root = CreateFrame(
+            parent,
+            "MessageDialog",
+            new Vector2(260f, height),
+            title,
+            true,
+            out RectTransform frame
+        );
+        AddMessage(frame, message);
+
+        LazyButton ok = MenuUi.CreateButton(
+            "OK",
+            frame,
+            "OK",
+            Anchors.Bottom,
+            new Vector2(70f, 12f),
+            new Vector2(-70f, 44f)
+        );
+        MenuUi.ApplyDialogButton(ok);
+        ok.onClick.AddListener(() => UnityEngine.Object.Destroy(root));
+        return root;
+    }
+
+    private static void AddMessage(RectTransform frame, string message)
+    {
+        TextMeshProUGUI body = MenuUi.CreateText("Message", frame, 12f, TextAlignmentOptions.Center);
+        MenuUi.ApplyLabelText(body);
+        MenuUi.SetRect(body.rectTransform, Anchors.Fill, new Vector2(14f, 50f), new Vector2(-14f, -38f));
+        body.text = message;
     }
 
     /// <summary>

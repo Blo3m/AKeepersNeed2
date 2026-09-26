@@ -1,7 +1,8 @@
 using System;
 using System.Collections.Generic;
-using AKeepersNeed2.Shared.Profiles;
+using System.Linq;
 using AKeepersNeed2.Shared.Ui;
+using BepInEx.Configuration;
 using LazyBearTechnology;
 using TMPro;
 using UnityEngine;
@@ -9,40 +10,59 @@ using UnityEngine;
 namespace AKeepersNeed2.Modules.Menu;
 
 /// <summary>
-/// "Label [Key]" rows that capture the next keypress to rebind a hotkey. Esc cancels and
-/// Backspace/Delete unbinds. A key is only bound to one thing at a time: assigning it takes
-/// it from the previous/next profile keys and every profile's switch key. The menu key is
-/// the exception — it can't be unbound or taken, so the menu can't be locked out.
+/// "Label [Key]" rows that capture the next keypress to rebind a hotkey. Esc, Backspace and
+/// Delete unbind (the menu key cancels instead). Middle/extra mouse buttons can be bound;
+/// left/right click can't.
+/// A key is bound to one thing at a time (see <see cref="KeyConflicts"/>): if it's already used
+/// by another mod hotkey, a Replace/Cancel dialog names it and Replace unbinds it there. If the
+/// menu key or a game action uses it, an OK message names it and nothing changes; the menu key
+/// can't be unbound, so the menu can't be locked out.
 /// </summary>
 internal sealed class KeyRebinder
 {
     private static readonly KeyCode[] AllKeys = (KeyCode[])Enum.GetValues(typeof(KeyCode));
 
+    private readonly AKNMenuWindow _window;
     private readonly List<Row> _rows = new List<Row>();
     private Row _listening;
+    private int _escHandledFrame = -1;
+
+    public KeyRebinder(AKNMenuWindow window)
+    {
+        _window = window;
+    }
 
     private sealed class Row
     {
         public TextMeshProUGUI Label;
-        public Func<KeyCode> Get;
+        public Func<ConfigEntry<KeyCode>> Entry;
         public Action<KeyCode> Set;
         public bool IsMenuKey;
+
+        public KeyCode Get()
+        {
+            return Entry()?.Value ?? KeyCode.None;
+        }
 
         public void Show()
         {
             if (Label != null)
             {
-                Label.text = Get() == KeyCode.None ? "None" : Get().ToString();
+                Label.text = KeyName(Get());
             }
         }
     }
 
-    /// <summary>Builds a rebind row into <paramref name="band"/>; returns its re-read action.</summary>
+    /// <summary>
+    /// Builds a rebind row into <paramref name="band"/> for the hotkey stored in
+    /// <paramref name="entry"/> (a getter, since e.g. the active profile's entry changes).
+    /// <paramref name="set"/> defaults to writing the entry. Returns the row's re-read action.
+    /// </summary>
     public Action BuildRow(
         RectTransform band,
         string label,
-        Func<KeyCode> get,
-        Action<KeyCode> set,
+        Func<ConfigEntry<KeyCode>> entry,
+        Action<KeyCode> set = null,
         bool isMenuKey = false
     )
     {
@@ -62,8 +82,15 @@ internal sealed class KeyRebinder
         var row = new Row
         {
             Label = button.GetComponentInChildren<TextMeshProUGUI>(true),
-            Get = get,
-            Set = set,
+            Entry = entry,
+            Set = set ?? (key =>
+            {
+                ConfigEntry<KeyCode> target = entry();
+                if (target != null)
+                {
+                    target.Value = key;
+                }
+            }),
             IsMenuKey = isMenuKey,
         };
         if (row.Label != null)
@@ -86,19 +113,13 @@ internal sealed class KeyRebinder
         }
         if (Input.GetKeyDown(KeyCode.Escape))
         {
-            Cancel();
+            _escHandledFrame = Time.frameCount;
+            UnbindOrCancel();
             return true;
         }
         if (Input.GetKeyDown(KeyCode.Backspace) || Input.GetKeyDown(KeyCode.Delete))
         {
-            if (_listening.IsMenuKey)
-            {
-                Cancel();
-            }
-            else
-            {
-                Assign(KeyCode.None);
-            }
+            UnbindOrCancel();
             return true;
         }
         foreach (KeyCode key in AllKeys)
@@ -107,8 +128,9 @@ internal sealed class KeyRebinder
             {
                 continue;
             }
-            int code = (int)key;
-            if (code >= (int)KeyCode.Mouse0 && code <= (int)KeyCode.Mouse6)
+            // Left/right click would bind the click that pressed the Rebind button (or a stray
+            // one); middle and extra mouse buttons are fair game.
+            if (key == KeyCode.Mouse0 || key == KeyCode.Mouse1)
             {
                 continue;
             }
@@ -121,6 +143,35 @@ internal sealed class KeyRebinder
         return true;
     }
 
+    /// <summary>
+    /// The window's Back (Esc / gamepad B) handler asks this first. During a capture Back
+    /// unbinds the key (cancels for the menu key). It also claims the Back press when
+    /// <see cref="Tick"/> already handled Esc earlier this frame (the two run in no fixed
+    /// order), so the menu stays open.
+    /// </summary>
+    public bool HandleBack()
+    {
+        if (_listening != null)
+        {
+            UnbindOrCancel();
+            return true;
+        }
+        return _escHandledFrame == Time.frameCount;
+    }
+
+    // The menu key can't be unbound, so the menu can't be locked out.
+    private void UnbindOrCancel()
+    {
+        if (_listening.IsMenuKey)
+        {
+            Cancel();
+        }
+        else
+        {
+            Assign(KeyCode.None);
+        }
+    }
+
     public void Cancel()
     {
         if (_listening == null)
@@ -130,6 +181,11 @@ internal sealed class KeyRebinder
         Row row = _listening;
         StopListening();
         row.Show();
+    }
+
+    private static string KeyName(KeyCode key)
+    {
+        return key == KeyCode.None ? "None" : key.ToString();
     }
 
     private void Begin(Row row)
@@ -147,43 +203,61 @@ internal sealed class KeyRebinder
     {
         Row row = _listening;
         StopListening();
+        row.Show();
 
-        if (!row.IsMenuKey && key != KeyCode.None && key == ModConfig.MenuHotkey.Value)
+        if (key == row.Get())
         {
-            Plugin.Logger.LogWarning($"[Menu] {key} is the menu key; pick another.");
-            row.Show();
+            return;
+        }
+        if (key == KeyCode.None)
+        {
+            Apply(row, key);
             return;
         }
 
-        if (key != KeyCode.None && key != row.Get())
+        List<KeyConflict> conflicts = KeyConflicts.Find(key, row.Entry());
+        if (conflicts.Count == 0)
         {
-            ReleaseEverywhere(key);
+            Apply(row, key);
+            return;
         }
-        row.Set(key);
 
+        string names = Names(conflicts);
+        // The menu key and game actions can't be taken, so there's nothing to replace: just say so.
+        if (conflicts.Any(c => !c.Replaceable))
+        {
+            _window.ShowMessage("Key in use", $"{KeyName(key)} is used by {names}.", 150f);
+            return;
+        }
+
+        _window.ShowConfirm(
+            "Key in use",
+            $"{KeyName(key)} is used by {names}.\nReplace it? {names} will be unbound.",
+            "Replace",
+            () =>
+            {
+                foreach (KeyConflict conflict in conflicts)
+                {
+                    conflict.Unbind();
+                }
+                Apply(row, key);
+            },
+            160f
+        );
+    }
+
+    private void Apply(Row row, KeyCode key)
+    {
+        row.Set(key);
         foreach (Row other in _rows)
         {
             other.Show();
         }
     }
 
-    private static void ReleaseEverywhere(KeyCode key)
+    private static string Names(List<KeyConflict> conflicts)
     {
-        if (ModConfig.PreviousProfileKey.Value == key)
-        {
-            ModConfig.PreviousProfileKey.Value = KeyCode.None;
-        }
-        if (ModConfig.NextProfileKey.Value == key)
-        {
-            ModConfig.NextProfileKey.Value = KeyCode.None;
-        }
-        foreach (Profile profile in ProfileStore.Profiles)
-        {
-            if (profile.Hotkey.Value == key)
-            {
-                profile.SetHotkey(KeyCode.None);
-            }
-        }
+        return string.Join(", ", conflicts.Select(c => c.Name));
     }
 
     private void StopListening()

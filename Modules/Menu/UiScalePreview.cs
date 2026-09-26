@@ -15,6 +15,9 @@ internal sealed class UiScalePreview
 {
     private const float MinScale = 0.5f;
     private const float MaxScale = 3f;
+    // Snapped so every saved value is exactly what the "0.00" label shows.
+    private const float Step = 0.01f;
+    private const string Format = "0.00";
 
     private readonly Transform _dialogParent;
     private readonly RectTransform _panel;
@@ -46,7 +49,7 @@ internal sealed class UiScalePreview
             sliderArea,
             MinScale,
             MaxScale,
-            "0.0",
+            Format,
             () => ModConfig.UiScale.Value,
             OnChanged,
             out _sync
@@ -74,6 +77,9 @@ internal sealed class UiScalePreview
 
     private void OnChanged(float value)
     {
+        value = Mathf.Round(value / Step) * Step;
+        _slider.SetValueWithoutNotify(value);
+
         // Dragging only updates the ghost; the confirm dialog waits for release.
         if (!_active)
         {
@@ -116,7 +122,7 @@ internal sealed class UiScalePreview
         }
         if (_dialogValue != null)
         {
-            _dialogValue.text = $"UI Scale: {value:0.0}";
+            _dialogValue.text = $"UI Scale: {value.ToString(Format)}";
         }
     }
 

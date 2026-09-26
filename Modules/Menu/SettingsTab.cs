@@ -40,7 +40,7 @@ internal sealed class SettingsTab : IMenuTab
         _page.AddSync(rebinder.BuildRow(
             _page.Band(30f, 6f),
             "Profile Key",
-            () => ProfileStore.Active?.Hotkey.Value ?? KeyCode.None,
+            () => ProfileStore.Active?.Hotkey,
             key => ProfileStore.Active?.SetHotkey(key)
         ));
 
@@ -51,22 +51,11 @@ internal sealed class SettingsTab : IMenuTab
         _page.AddSync(rebinder.BuildRow(
             _page.Band(30f, 8f),
             "Menu Key",
-            () => ModConfig.MenuHotkey.Value,
-            key => ModConfig.MenuHotkey.Value = key,
+            () => ModConfig.MenuHotkey,
             isMenuKey: true
         ));
-        _page.AddSync(rebinder.BuildRow(
-            _page.Band(30f, 6f),
-            "Previous Profile",
-            () => ModConfig.PreviousProfileKey.Value,
-            key => ModConfig.PreviousProfileKey.Value = key
-        ));
-        _page.AddSync(rebinder.BuildRow(
-            _page.Band(30f, 6f),
-            "Next Profile",
-            () => ModConfig.NextProfileKey.Value,
-            key => ModConfig.NextProfileKey.Value = key
-        ));
+        _page.AddSync(rebinder.BuildRow(_page.Band(30f, 6f), "Previous Profile", () => ModConfig.PreviousProfileKey));
+        _page.AddSync(rebinder.BuildRow(_page.Band(30f, 6f), "Next Profile", () => ModConfig.NextProfileKey));
 
         Refresh();
     }

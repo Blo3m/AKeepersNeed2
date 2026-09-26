@@ -15,7 +15,7 @@ internal static class InputGate
 
     public static bool IsBlocked => KeyCaptureActive || IsTextInputFocused();
 
-    private static bool IsTextInputFocused()
+    public static bool IsTextInputFocused()
     {
         GameObject selected = EventSystem.current != null
             ? EventSystem.current.currentSelectedGameObject

@@ -63,7 +63,7 @@ internal sealed class MapTeleportModule : IModule, IUpdatable
             Ignore("cursor outside the map image");
             return;
         }
-        MapTeleporter.TeleportToMapPoint(point, mapRect.sizeDelta);
+        MapTeleportHelper.TeleportToMapPoint(point, mapRect.sizeDelta);
     }
 
     private static void Ignore(string reason)

@@ -9,7 +9,7 @@ using UnityEngine.UI;
 namespace AKeepersNeed2.Modules.Menu;
 
 /// <summary>
-/// Player-focused tweaks: energy regeneration and drain, plus live setters for the red/green/blue
+/// Player-focused tweaks: energy, combat and teleport-to-cursor toggles, plus live setters for the red/green/blue
 /// tech points and per-NPC reputation. The setters write straight into the current save's
 /// <see cref="PlayerData"/>, so they are not part of any profile.
 /// </summary>
@@ -26,10 +26,16 @@ internal sealed class PlayerTab : IMenuTab
     /// <summary>NPC ids (<c>WGODef.id</c>) hidden from the reputation picker.</summary>
     private static readonly HashSet<string> ExcludedReps = new HashSet<string> { "npc_fake_villagers" };
 
+    private readonly AKNMenuWindow _window;
     private readonly List<RepEntry> _reps = new List<RepEntry>();
     private MenuPage _page;
     private TextMeshProUGUI _repLabel;
     private int _repIndex;
+
+    public PlayerTab(AKNMenuWindow window)
+    {
+        _window = window;
+    }
 
     public string Title => "Player";
 
@@ -67,6 +73,18 @@ internal sealed class PlayerTab : IMenuTab
             () => ModConfig.InfiniteStaminaEnabled.Value,
             v => ModConfig.InfiniteStaminaEnabled.Value = v
         );
+
+        _page.SectionHeader("Movement");
+        _page.ToggleRow(
+            "Teleport to Cursor",
+            () => ModConfig.TeleportToCursorEnabled.Value,
+            v => ModConfig.TeleportToCursorEnabled.Value = v
+        );
+        _page.AddSync(_window.Rebinder.BuildRow(
+            _page.Band(30f, 6f),
+            "Teleport Key",
+            () => ModConfig.TeleportToCursorKey
+        ));
 
         _page.SectionHeader("Tech Points");
         for (int i = 0; i < TechPoints.GetLength(0); i++)

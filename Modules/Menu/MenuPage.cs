@@ -24,6 +24,7 @@ internal sealed class MenuPage
     private readonly RectTransform _content;
     private readonly List<Action> _syncs = new List<Action>();
     private float _cursorTop;
+    private bool _hasBands;
 
     /// <summary>
     /// Wraps <paramref name="page"/> in a vertical <see cref="ScrollRect"/>. Rows go into its
@@ -280,11 +281,16 @@ internal sealed class MenuPage
 
     /// <summary>
     /// Creates a full-width row of the given height at the current vertical cursor (relative
-    /// to the content's top) and advances the cursor past it, including a gap above.
+    /// to the content's top) and advances the cursor past it, including a gap above. The first
+    /// row skips its gap: the window already leaves a margin under the title bar.
     /// </summary>
     private RectTransform NewBand(float height, float topGap)
     {
-        _cursorTop -= topGap;
+        if (_hasBands)
+        {
+            _cursorTop -= topGap;
+        }
+        _hasBands = true;
 
         RectTransform band = MenuUi.CreateRect("Band", _content);
         MenuUi.SetRect(band, Anchors.Top, new Vector2(0f, _cursorTop - height), new Vector2(0f, _cursorTop));

@@ -27,7 +27,8 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private const float ContentBottom = TabBarBottom + TabBarHeight + 4f;
     private const string MenuTitle = "A Keeper's Need 2";
 
-    private readonly KeyRebinder _rebinder = new KeyRebinder();
+    private KeyRebinder _rebinder;
+    private bool _textInputFocusedLastFrame;
 
     private IMenuTab[] _tabs;
     private RectTransform _panelRect;
@@ -69,11 +70,13 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 
     private void BuildUi()
     {
+        _rebinder = new KeyRebinder(this);
+
         // Built here (not a field initializer) so tabs can capture this window.
         _tabs = new IMenuTab[]
         {
             new SettingsTab(this),
-            new PlayerTab(),
+            new PlayerTab(this),
             new DropsTab(),
             new CraftingTab(),
             new ItemsTab(),
@@ -99,7 +102,9 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         if (NativeUiSkin.IsReady)
         {
             Image inner = MenuUi.CreateImage("InnerBackground", _panelRect, new Color(0.105f, 0.112f, 0.14f, 1f));
-            MenuUi.SetRect(inner.rectTransform, Anchors.Fill, new Vector2(13f, 13f), new Vector2(-13f, -38f));
+            // Starts under the header (which ends at -36 and draws on top) so no see-through
+            // strip is left between them; the header sprite's bottom edge is partly transparent.
+            MenuUi.SetRect(inner.rectTransform, Anchors.Fill, new Vector2(13f, 13f), new Vector2(-13f, -24f));
             inner.raycastTarget = false;
 
             Image frame = MenuUi.CreateImage("Frame", _panelRect, Color.white);
@@ -201,10 +206,16 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 
     // --- Dialogs (one at a time; closed with the window) ---
 
-    public void ShowConfirm(string title, string message, string confirmLabel, Action onConfirm)
+    public void ShowConfirm(string title, string message, string confirmLabel, Action onConfirm, float height = 132f)
     {
         CloseDialog();
-        _dialog = MenuDialog.ShowConfirm(transform, title, message, confirmLabel, onConfirm);
+        _dialog = MenuDialog.ShowConfirm(transform, title, message, confirmLabel, onConfirm, height);
+    }
+
+    public void ShowMessage(string title, string message, float height = 132f)
+    {
+        CloseDialog();
+        _dialog = MenuDialog.ShowMessage(transform, title, message, height);
     }
 
     public void ShowNamePrompt(string title, string initial, Func<string, string> submit)
@@ -228,20 +239,42 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     /// </summary>
     public bool TickInput()
     {
-        return _rebinder.Tick();
+        return _rebinder != null && _rebinder.Tick();
     }
 
     private void ResetTransientState()
     {
         _uiScale.Cancel();
-        _rebinder.Cancel();
+        _rebinder?.Cancel();
         CloseDialog();
+    }
+
+    // Read by OnPressedBack: a text field handles Esc itself (reverts and unfocuses), possibly
+    // earlier in the same frame, so "focused at the end of last frame" still counts.
+    private void LateUpdate()
+    {
+        _textInputFocusedLastFrame = InputGate.IsTextInputFocused();
     }
 
     // LazyWindow only closes on Back (Esc / gamepad B) when it has a closeButton; the menu has
     // none (the hotkey closes it), so Back would otherwise be swallowed and strand gamepad users.
+    // Back first backs out of whatever is in progress: a rebind capture, then a dialog, then a
+    // focused text field; only then does it close the menu.
     protected override bool OnPressedBack()
     {
+        if (_rebinder != null && _rebinder.HandleBack())
+        {
+            return true;
+        }
+        if (_dialog != null)
+        {
+            CloseDialog();
+            return true;
+        }
+        if (_textInputFocusedLastFrame || InputGate.IsTextInputFocused())
+        {
+            return true;
+        }
         Close();
         return true;
     }

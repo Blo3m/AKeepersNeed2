@@ -5,8 +5,9 @@ A [BepInEx](https://github.com/BepInEx/BepInEx) mod for **Graveyard Keeper 2**.
 ## Features
 
 Everything is configured in-game through a native-styled menu with sideways-scrollable tabs.
-The menu hotkey (default **F1**) opens and closes it, and Esc also closes it. Pages taller than
-the window scroll vertically. When the mod is installed, the main menu shows
+The menu hotkey (default **F1**) opens and closes it, and Esc also closes it. Esc first
+backs out of whatever you're in the middle of: it closes an open dialog, leaves a text field,
+and while rebinding a key it unbinds that key. Pages taller than the window scroll vertically. When the mod is installed, the main menu shows
 "A Keepers Need 2 loaded (v…)" under the game's version.
 
 **Player**
@@ -14,6 +15,8 @@ the window scroll vertically. When the mod is installed, the main menu shows
 - **Infinite energy** — energy never decreases
 - **Infinite health** — you take no HP damage
 - **Infinite stamina** — combat stamina (sword/bow attacks) never drains
+- **Teleport to cursor** — press a key (default middle mouse, rebindable) to teleport to the
+  nearest walkable spot under the cursor, outdoors or indoors
 - **Tech points** — view and set your red, green and blue tech points and happiness
 - **Reputation** — pick an NPC and view or set your reputation with them
 
@@ -54,7 +57,7 @@ Switching takes effect immediately.
 - Edits are saved to the active profile automatically.
 - Switch with **F2** / **F3** (previous / next), or give any profile its own hotkey. A short
   on-screen notice confirms the switch.
-- Every hotkey can be rebound in the Settings tab (Esc cancels, Backspace unbinds).
+- Every hotkey can be rebound in the Settings tab (Esc or Backspace unbinds; the menu key can't be unbound).
 
 ### Config files
 

@@ -106,12 +106,17 @@ internal static class MenuUi
         input.lineType = TMP_InputField.LineType.SingleLine;
         input.contentType = contentType;
 
+        // The mask sits TextPadding outside the text on each side: the game's pixel font draws
+        // some glyphs' left stroke (e.g. "6") just before the character origin, which a mask
+        // flush with the text would clip.
+        const float TextPadding = 2f;
         RectTransform area = CreateRect("TextArea", go.transform);
-        SetRect(area, Anchors.Fill, new Vector2(6f, 2f), new Vector2(-6f, -2f));
+        SetRect(area, Anchors.Fill, new Vector2(6f - TextPadding, 2f), new Vector2(-6f + TextPadding, -2f));
         area.gameObject.AddComponent<RectMask2D>();
+        var textInset = new Vector2(TextPadding, 0f);
 
         TextMeshProUGUI text = CreateText("Text", area, size, TextAlignmentOptions.Left);
-        Stretch(text.rectTransform);
+        SetRect(text.rectTransform, Anchors.Fill, textInset, -textInset);
         text.textWrappingMode = TextWrappingModes.NoWrap;
 
         TextMeshProUGUI ph = CreateText(
@@ -121,7 +126,7 @@ internal static class MenuUi
             TextAlignmentOptions.Left,
             new Color(0.6f, 0.56f, 0.53f, 0.7f)
         );
-        Stretch(ph.rectTransform);
+        SetRect(ph.rectTransform, Anchors.Fill, textInset, -textInset);
         ph.textWrappingMode = TextWrappingModes.NoWrap;
         ph.text = placeholder;
 
