@@ -4,8 +4,10 @@ A [BepInEx](https://github.com/BepInEx/BepInEx) mod for **Graveyard Keeper 2**.
 
 ## Features
 
-Everything is configured in-game through a native-styled menu (default hotkey **F1**) with
-sideways-scrollable tabs. Pages taller than the window scroll vertically.
+Everything is configured in-game through a native-styled menu with sideways-scrollable tabs.
+The menu hotkey (default **F1**) opens and closes it, and Esc also closes it. Pages taller than
+the window scroll vertically. When the mod is installed, the main menu shows
+"A Keepers Need 2 loaded (v…)" under the game's version.
 
 **Player**
 - **Energy regen** — passive energy regeneration while awake (energy per 5s)

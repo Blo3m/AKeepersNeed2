@@ -12,7 +12,7 @@ namespace AKeepersNeed2.Modules.Menu;
 /// The mod's menu: a from-scratch uGUI window styled from the game's own assets
 /// (<see cref="NativeUiSkin"/>) and subclassing the game's <c>LazyWindow</c> so it joins the
 /// native window stack/input. A title header (showing the active profile) and a footer
-/// (<see cref="MenuTabBar"/> + Close) frame a content area that swaps between
+/// (<see cref="MenuTabBar"/>) frame a content area that swaps between
 /// <see cref="IMenuTab"/> pages. It also owns the state tabs share: the
 /// <see cref="UiScalePreview"/>, the <see cref="KeyRebinder"/>, and the one open
 /// <see cref="MenuDialog"/>. Tabs re-read their values on open and whenever
@@ -22,6 +22,9 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 {
     private const float PanelWidth = 340f;
     private const float SidePadding = 20f;
+    private const float TabBarBottom = 26f;
+    private const float TabBarHeight = 32f;
+    private const float ContentBottom = TabBarBottom + TabBarHeight + 4f;
     private const string MenuTitle = "A Keeper's Need 2";
 
     private readonly KeyRebinder _rebinder = new KeyRebinder();
@@ -151,7 +154,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private void BuildContent()
     {
         RectTransform content = MenuUi.CreateRect("Content", _panelRect);
-        MenuUi.SetRect(content, Anchors.Fill, new Vector2(SidePadding, 88f), new Vector2(-SidePadding, -44f));
+        MenuUi.SetRect(content, Anchors.Fill, new Vector2(SidePadding, ContentBottom), new Vector2(-SidePadding, -44f));
 
         _pages = new RectTransform[_tabs.Length];
         for (int i = 0; i < _tabs.Length; i++)
@@ -165,18 +168,13 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private void BuildFooter()
     {
         RectTransform bar = MenuUi.CreateRect("TabBar", _panelRect);
-        MenuUi.SetRect(bar, Anchors.Bottom, new Vector2(SidePadding, 52f), new Vector2(-SidePadding, 84f));
-        _tabBar = new MenuTabBar(bar, Array.ConvertAll(_tabs, tab => tab.Title), SelectTab);
-
-        closeButton = MenuUi.CreateButton(
-            "Close",
-            _panelRect,
-            "Close",
+        MenuUi.SetRect(
+            bar,
             Anchors.Bottom,
-            new Vector2(SidePadding, 14f),
-            new Vector2(-SidePadding, 46f)
+            new Vector2(SidePadding, TabBarBottom),
+            new Vector2(-SidePadding, TabBarBottom + TabBarHeight)
         );
-        MenuUi.ApplyDialogButton(closeButton);
+        _tabBar = new MenuTabBar(bar, Array.ConvertAll(_tabs, tab => tab.Title), SelectTab);
     }
 
     private void SelectTab(int index)
@@ -233,7 +231,15 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         CloseDialog();
     }
 
-    // Every close path (Close button, Back, hotkey) funnels through here.
+    // LazyWindow only closes on Back (Esc / gamepad B) when it has a closeButton; the menu has
+    // none (the hotkey closes it), so Back would otherwise be swallowed and strand gamepad users.
+    protected override bool OnPressedBack()
+    {
+        Close();
+        return true;
+    }
+
+    // Every close path (Back, hotkey) funnels through here.
     protected override void HideWindow()
     {
         ResetTransientState();
