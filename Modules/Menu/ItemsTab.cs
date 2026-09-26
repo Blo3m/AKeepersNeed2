@@ -10,20 +10,22 @@ namespace AKeepersNeed2.Modules.Menu;
 /// <summary>
 /// Item adder: a searchable, category-filtered list of every item definition
 /// (<c>GameBalance.Me.itemDefs</c>). Each row shows the item's icon, name and id with a
-/// per-row amount field and a Give button that adds it to the player's inventory. Rows are
-/// pooled and repopulated on filter changes to stay responsive across ~800 items.
+/// per-row amount field and a Give button that adds it to the player's inventory. The list is
+/// virtualized: the scroll content spans every filtered item, and a small row pool is
+/// repositioned and repopulated for whatever is in view, so all ~800 items stay reachable.
 /// </summary>
 internal sealed class ItemsTab : IMenuTab
 {
-    private const int MaxRows = 100;
     private const float RowHeight = 40f;
 
     private readonly List<Entry> _all = new List<Entry>();
     private readonly List<Entry> _filtered = new List<Entry>();
+    // Keyed by item id because pooled rows are reused for different items while scrolling.
+    private readonly Dictionary<string, string> _amounts = new Dictionary<string, string>();
     private readonly List<ItemType?> _catTypes = new List<ItemType?>();
     private readonly List<string> _catLabels = new List<string>();
 
-    private ItemRow[] _rows;
+    private readonly List<ItemRow> _rows = new List<ItemRow>();
     private RectTransform _listContent;
     private ScrollRect _scroll;
     private TMP_InputField _search;
@@ -44,7 +46,6 @@ internal sealed class ItemsTab : IMenuTab
 
         BuildCategoryRow(content);
         BuildList(content);
-        BuildRowPool();
         Refilter();
     }
 
@@ -147,6 +148,7 @@ internal sealed class ItemsTab : IMenuTab
         MenuUi.Stretch(viewport);
         viewport.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.001f);
         viewport.gameObject.AddComponent<RectMask2D>();
+        viewport.gameObject.AddComponent<ResizeNotifier>().Resized += UpdateVisibleRows;
         _scroll.viewport = viewport;
 
         _listContent = MenuUi.CreateRect("Content", viewport);
@@ -157,18 +159,10 @@ internal sealed class ItemsTab : IMenuTab
         _listContent.offsetMax = new Vector2(0f, 0f);
         _listContent.sizeDelta = new Vector2(0f, 0f);
         _scroll.content = _listContent;
+        _scroll.onValueChanged.AddListener(_ => UpdateVisibleRows());
     }
 
-    private void BuildRowPool()
-    {
-        _rows = new ItemRow[MaxRows];
-        for (int i = 0; i < MaxRows; i++)
-        {
-            _rows[i] = CreateRow(i);
-        }
-    }
-
-    private ItemRow CreateRow(int index)
+    private ItemRow CreateRow()
     {
         var row = new ItemRow();
 
@@ -177,7 +171,6 @@ internal sealed class ItemsTab : IMenuTab
         row.Root.anchorMax = new Vector2(1f, 1f);
         row.Root.pivot = new Vector2(0.5f, 1f);
         row.Root.sizeDelta = new Vector2(0f, RowHeight);
-        row.Root.anchoredPosition = new Vector2(0f, -index * RowHeight);
 
         row.Icon = MenuUi.CreateImage("Icon", row.Root, Color.white);
         MenuUi.SetRect(row.Icon.rectTransform, Anchors.Left, new Vector2(2f, 6f), new Vector2(30f, -6f));
@@ -205,6 +198,7 @@ internal sealed class ItemsTab : IMenuTab
         var amountRect = (RectTransform)row.Amount.transform;
         MenuUi.SetRect(amountRect, Anchors.Right, new Vector2(-84f, 6f), new Vector2(-48f, -6f));
         row.Amount.text = "1";
+        row.Amount.onValueChanged.AddListener(text => RememberAmount(row, text));
 
         LazyButton give = MenuUi.CreateButton(
             "Give",
@@ -250,32 +244,68 @@ internal sealed class ItemsTab : IMenuTab
             _filtered.Add(e);
         }
 
-        int shown = Mathf.Min(_filtered.Count, MaxRows);
-        for (int i = 0; i < _rows.Length; i++)
-        {
-            if (i < shown)
-            {
-                Populate(_rows[i], _filtered[i]);
-                _rows[i].Root.gameObject.SetActive(true);
-            }
-            else
-            {
-                _rows[i].Root.gameObject.SetActive(false);
-            }
-        }
+        _listContent.sizeDelta = new Vector2(0f, _filtered.Count * RowHeight);
+        _scroll.StopMovement();
+        _listContent.anchoredPosition = Vector2.zero;
+        _countText.text = $"{_filtered.Count} items";
 
-        _listContent.sizeDelta = new Vector2(0f, shown * RowHeight);
-        _scroll.verticalNormalizedPosition = 1f;
-        _countText.text = _filtered.Count > MaxRows
-            ? $"{MaxRows} of {_filtered.Count}"
-            : $"{_filtered.Count} items";
+        foreach (ItemRow row in _rows)
+        {
+            row.Index = -1;
+        }
+        UpdateVisibleRows();
     }
 
-    private static void Populate(ItemRow row, Entry entry)
+    private void UpdateVisibleRows()
+    {
+        if (_scroll == null || _scroll.viewport == null || _listContent == null)
+        {
+            return;
+        }
+        // +2 covers a partially visible row at each edge. The pool only grows, since the
+        // viewport's height depends on screen size and UI scale.
+        int needed = Mathf.CeilToInt(_scroll.viewport.rect.height / RowHeight) + 2;
+        while (_rows.Count < needed)
+        {
+            _rows.Add(CreateRow());
+        }
+
+        int first = Mathf.Max(0, Mathf.FloorToInt(_listContent.anchoredPosition.y / RowHeight));
+        for (int index = first; index < first + _rows.Count; index++)
+        {
+            // Slotting by index keeps a row on its item while in view, so scrolling only
+            // repopulates the rows entering at the edges.
+            ItemRow row = _rows[index % _rows.Count];
+            if (index >= _filtered.Count)
+            {
+                row.Index = -1;
+                row.Root.gameObject.SetActive(false);
+                continue;
+            }
+            if (row.Index != index)
+            {
+                row.Index = index;
+                Populate(row, _filtered[index]);
+                row.Root.anchoredPosition = new Vector2(0f, -index * RowHeight);
+            }
+            row.Root.gameObject.SetActive(true);
+        }
+    }
+
+    private void RememberAmount(ItemRow row, string text)
+    {
+        if (row.Def != null)
+        {
+            _amounts[row.Def.id] = text;
+        }
+    }
+
+    private void Populate(ItemRow row, Entry entry)
     {
         row.Def = entry.Def;
         row.Name.text = entry.Name;
         row.Id.text = entry.Def.id;
+        row.Amount.SetTextWithoutNotify(_amounts.TryGetValue(entry.Def.id, out string amount) ? amount : "1");
 
         Sprite sprite = EasySpritesCollection.Instance != null
             ? EasySpritesCollection.Instance.GetSprite(entry.Def.iconId)
@@ -322,5 +352,6 @@ internal sealed class ItemsTab : IMenuTab
         public TextMeshProUGUI Id;
         public TMP_InputField Amount;
         public ItemDef Def;
+        public int Index = -1;
     }
 }
