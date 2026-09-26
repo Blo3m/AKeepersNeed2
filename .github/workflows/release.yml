@@ -1,0 +1,43 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # Self-hosted LAN runner (see ci/setup-runner.sh). It holds the game's copyrighted
+    # managed DLLs locally, so they never leave the machine or enter the repo.
+    runs-on: [self-hosted, linux, gk2]
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      GAME_MANAGED_DIR: /opt/gk2/Managed
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          $version = '${{ github.ref_name }}'.TrimStart('v')
+          ./build.ps1 -Configuration Release -NoDeploy -ManagedDir $env:GAME_MANAGED_DIR -Version $version
+
+      - name: Package
+        run: |
+          $stage = Join-Path $env:RUNNER_TEMP 'package'
+          $plugins = Join-Path $stage 'BepInEx/plugins'
+          Remove-Item $stage -Recurse -Force -ErrorAction SilentlyContinue
+          New-Item -ItemType Directory -Force -Path $plugins | Out-Null
+          Copy-Item 'bin/Release/net461/AKeepersNeed2.dll' $plugins
+          Copy-Item 'README.md', 'LICENSE' $stage
+          Compress-Archive -Path "$stage/*" -DestinationPath 'AKeepersNeed2-${{ github.ref_name }}.zip' -Force
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: AKeepersNeed2-${{ github.ref_name }}.zip
+          generate_release_notes: true

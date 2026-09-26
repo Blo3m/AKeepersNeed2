@@ -8,13 +8,16 @@
 #   ./build.ps1 -Configuration Release
 #   ./build.ps1 -Clean          # clean before building
 #   ./build.ps1 -NoDeploy       # build only, don't copy to the game
+#   ./build.ps1 -ManagedDir <dir> -Version 1.2.3   # explicit game DLL folder + version (CI)
 
 [CmdletBinding()]
 param(
     [ValidateSet('Debug', 'Release')]
     [string]$Configuration = 'Debug',
     [switch]$Clean,
-    [switch]$NoDeploy
+    [switch]$NoDeploy,
+    [string]$ManagedDir,
+    [string]$Version
 )
 
 $ErrorActionPreference = 'Stop'
@@ -67,16 +70,24 @@ function Initialize-GameReferences {
     if (Test-Path $props) {
         return
     }
-    $gamePath = Resolve-GamePath -AppId $AppId
-    if (-not $gamePath) {
-        Write-Host "GameReferences.props missing and the game wasn't found via Steam." -ForegroundColor Yellow
-        Write-Host "Create it manually (see README.md) before building." -ForegroundColor Yellow
-        return
-    }
-    $managed = Join-Path $gamePath 'GraveyardKeeper2_Data\Managed'
-    if (-not (Test-Path $managed)) {
-        Write-Host "Found the game but not its Managed folder: $managed" -ForegroundColor Yellow
-        return
+    if ($ManagedDir) {
+        if (-not (Test-Path $ManagedDir)) {
+            Write-Host "-ManagedDir not found: $ManagedDir" -ForegroundColor Yellow
+            return
+        }
+        $managed = (Resolve-Path $ManagedDir).Path
+    } else {
+        $gamePath = Resolve-GamePath -AppId $AppId
+        if (-not $gamePath) {
+            Write-Host "GameReferences.props missing and the game wasn't found via Steam." -ForegroundColor Yellow
+            Write-Host "Create it manually (see README.md) before building." -ForegroundColor Yellow
+            return
+        }
+        $managed = Join-Path $gamePath 'GraveyardKeeper2_Data\Managed'
+        if (-not (Test-Path $managed)) {
+            Write-Host "Found the game but not its Managed folder: $managed" -ForegroundColor Yellow
+            return
+        }
     }
     $template = @'
 <Project>
@@ -118,6 +129,10 @@ function Initialize-GameReferences {
 # They're harmless here — BepInEx/Mono supplies the runtime assemblies — so demote
 # them to messages for this build only, rather than touching the csproj.
 $suppress = '-p:MSBuildWarningsAsMessages=MSB3277'
+$buildArgs = @($suppress)
+if ($Version) {
+    $buildArgs += "-p:Version=$Version"
+}
 
 if ($Clean) {
     Write-Host "Cleaning ($Configuration)..." -ForegroundColor Cyan
@@ -127,7 +142,7 @@ if ($Clean) {
 Initialize-GameReferences
 
 Write-Host "Building $Configuration..." -ForegroundColor Cyan
-dotnet build $project -c $Configuration --nologo -v minimal $suppress
+dotnet build $project -c $Configuration --nologo -v minimal @buildArgs
 if ($LASTEXITCODE -ne 0) {
     Write-Host "Build FAILED (exit $LASTEXITCODE)." -ForegroundColor Red
     exit $LASTEXITCODE
