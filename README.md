@@ -16,6 +16,14 @@ sideways-scrollable tabs.
 - **Tech points** — multiply technology-point rewards
 - **Craft output** — multiply craft-station output quantity
 
+**Crafting**
+- **Free crafting** — craft without the required items; nothing is consumed (includes
+  alchemy and tool durability)
+- **Instant crafting** — crafts finish immediately (garden growing, star and autopsy crafts
+  keep their normal time)
+- **Free building** — build without the required items; nothing is consumed (includes
+  town buildings)
+
 **Items**
 - **Item adder** — search or filter every item by category and add any amount to your
   inventory

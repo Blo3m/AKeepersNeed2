@@ -72,6 +72,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new SettingsTab(this),
             new PlayerTab(),
             new DropsTab(),
+            new CraftingTab(),
             new ItemsTab(),
             new MapTab(),
         };

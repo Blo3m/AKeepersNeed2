@@ -54,6 +54,11 @@ internal static class ModConfig
     public static ConfigEntry<bool> TechPointsEnabled;
     public static ConfigEntry<float> TechPointsMultiplier; // 1x .. 10x
 
+    // --- Crafting & building costs ---
+    public static ConfigEntry<bool> FreeCraftingEnabled;
+    public static ConfigEntry<bool> FreeBuildingEnabled;
+    public static ConfigEntry<bool> InstantCraftEnabled;
+
     // --- Map (display-only; nothing is written to the save) ---
     public static ConfigEntry<bool> RevealMapEnabled;
     public static ConfigEntry<bool> UnlockMilestonesEnabled;
@@ -116,6 +121,13 @@ internal static class ModConfig
         TechPointsMultiplier = config.Bind("TechPoints", "Multiplier", 1f,
             new ConfigDescription("Technology point multiplier.",
                 new AcceptableValueRange<float>(1f, 10f)));
+
+        FreeCraftingEnabled = config.Bind("FreeCrafting", "Enabled", false,
+            "Craft without the required items; nothing is consumed (includes alchemy and tool durability).");
+        FreeBuildingEnabled = config.Bind("FreeBuilding", "Enabled", false,
+            "Build without the required items; nothing is consumed (includes town buildings).");
+        InstantCraftEnabled = config.Bind("InstantCraft", "Enabled", false,
+            "Crafts finish immediately. Garden growing, star and autopsy crafts keep their normal time.");
 
         RevealMapEnabled = config.Bind("MapReveal", "Enabled", false,
             "Show every map zone and area label as if explored. Display-only.");
