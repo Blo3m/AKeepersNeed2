@@ -17,11 +17,13 @@ internal sealed class MapTab : IMenuTab
         _page.ToggleRow(
             "Reveal Map",
             () => ModConfig.RevealMapEnabled.Value,
-            v => ModConfig.RevealMapEnabled.Value = v);
+            v => ModConfig.RevealMapEnabled.Value = v
+        );
         _page.ToggleRow(
             "Unlock Milestones",
             () => ModConfig.UnlockMilestonesEnabled.Value,
-            v => ModConfig.UnlockMilestonesEnabled.Value = v);
+            v => ModConfig.UnlockMilestonesEnabled.Value = v
+        );
         _page.ToggleRow(
             "Show NPCs",
             () => ModConfig.MapNpcsEnabled.Value,
@@ -29,16 +31,19 @@ internal sealed class MapTab : IMenuTab
             {
                 ModConfig.MapNpcsEnabled.Value = v;
                 _page.Sync();
-            });
+            }
+        );
         _page.ToggleRow(
             "    Shift-Click NPC to Teleport",
             () => ModConfig.MapNpcsTeleportEnabled.Value,
             v => ModConfig.MapNpcsTeleportEnabled.Value = v,
-            () => ModConfig.MapNpcsEnabled.Value);
+            () => ModConfig.MapNpcsEnabled.Value
+        );
         _page.ToggleRow(
             "Shift-Click Map Teleport",
             () => ModConfig.MapTeleportEnabled.Value,
-            v => ModConfig.MapTeleportEnabled.Value = v);
+            v => ModConfig.MapTeleportEnabled.Value = v
+        );
     }
 
     public void Refresh()

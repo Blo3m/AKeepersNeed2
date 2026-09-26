@@ -81,10 +81,9 @@ internal sealed class Toast : MonoBehaviour
         _panel.sizeDelta = new Vector2(260f, 30f);
         _panel.anchoredPosition = new Vector2(0f, -40f);
 
-        _text = MenuUi.CreateText("Text", _panel, 13f, TextAlignmentOptions.Center, Color.white);
+        _text = MenuUi.CreateText("Text", _panel, 13f, TextAlignmentOptions.Center);
         MenuUi.ApplyHeaderText(_text);
-        MenuUi.SetRect(_text.rectTransform,
-            new Vector2(10f, 0f), new Vector2(-10f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(_text.rectTransform, Anchors.Fill, new Vector2(10f, 0f), new Vector2(-10f, 0f));
         _text.textWrappingMode = TextWrappingModes.NoWrap;
         _text.overflowMode = TextOverflowModes.Ellipsis;
     }

@@ -37,21 +37,40 @@ internal static class MenuUi
         return gui.Root;
     }
 
-    public static Image CreateImage(string name, Transform parent, Color color)
+    /// <summary>Creates an empty UI GameObject under <paramref name="parent"/>.</summary>
+    public static RectTransform CreateRect(string name, Transform parent)
     {
         var go = new GameObject(name, typeof(RectTransform));
         go.transform.SetParent(parent, false);
-        var image = go.AddComponent<Image>();
+        return (RectTransform)go.transform;
+    }
+
+    public static Image CreateImage(string name, Transform parent, Color color)
+    {
+        var image = CreateRect(name, parent).gameObject.AddComponent<Image>();
         image.color = color;
         return image;
     }
 
-    public static TextMeshProUGUI CreateText(string name, Transform parent, float size,
-        TextAlignmentOptions alignment, Color color)
+    public static TextMeshProUGUI CreateText(
+        string name,
+        Transform parent,
+        float size,
+        TextAlignmentOptions alignment
+    )
     {
-        var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
-        var text = go.AddComponent<TextMeshProUGUI>();
+        return CreateText(name, parent, size, alignment, Color.white);
+    }
+
+    public static TextMeshProUGUI CreateText(
+        string name,
+        Transform parent,
+        float size,
+        TextAlignmentOptions alignment,
+        Color color
+    )
+    {
+        var text = CreateRect(name, parent).gameObject.AddComponent<TextMeshProUGUI>();
         if (NativeUiSkin.IsReady && NativeUiSkin.RegularFont != null)
         {
             text.font = NativeUiSkin.RegularFont;
@@ -68,11 +87,15 @@ internal static class MenuUi
     }
 
     /// <summary>Creates a single-line TMP input field (cell-styled) with a placeholder.</summary>
-    public static TMP_InputField CreateInputField(string name, Transform parent, string placeholder,
-        float size, TMP_InputField.ContentType contentType = TMP_InputField.ContentType.Standard)
+    public static TMP_InputField CreateInputField(
+        string name,
+        Transform parent,
+        string placeholder,
+        float size,
+        TMP_InputField.ContentType contentType = TMP_InputField.ContentType.Standard
+    )
     {
-        var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
+        GameObject go = CreateRect(name, parent).gameObject;
 
         var image = go.AddComponent<Image>();
         image.color = new Color(0.2f, 0.1f, 0.07f, 1f);
@@ -83,36 +106,44 @@ internal static class MenuUi
         input.lineType = TMP_InputField.LineType.SingleLine;
         input.contentType = contentType;
 
-        var area = new GameObject("TextArea", typeof(RectTransform));
-        area.transform.SetParent(go.transform, false);
-        var areaRect = (RectTransform)area.transform;
-        SetRect(areaRect, new Vector2(6f, 2f), new Vector2(-6f, -2f), Vector2.zero, Vector2.one);
-        area.AddComponent<RectMask2D>();
+        RectTransform area = CreateRect("TextArea", go.transform);
+        SetRect(area, Anchors.Fill, new Vector2(6f, 2f), new Vector2(-6f, -2f));
+        area.gameObject.AddComponent<RectMask2D>();
 
-        TextMeshProUGUI text = CreateText("Text", area.transform, size, TextAlignmentOptions.Left, Color.white);
+        TextMeshProUGUI text = CreateText("Text", area, size, TextAlignmentOptions.Left);
         Stretch(text.rectTransform);
         text.textWrappingMode = TextWrappingModes.NoWrap;
 
-        TextMeshProUGUI ph = CreateText("Placeholder", area.transform, size,
-            TextAlignmentOptions.Left, new Color(0.6f, 0.56f, 0.53f, 0.7f));
+        TextMeshProUGUI ph = CreateText(
+            "Placeholder",
+            area,
+            size,
+            TextAlignmentOptions.Left,
+            new Color(0.6f, 0.56f, 0.53f, 0.7f)
+        );
         Stretch(ph.rectTransform);
         ph.textWrappingMode = TextWrappingModes.NoWrap;
         ph.text = placeholder;
 
-        input.textViewport = areaRect;
+        input.textViewport = area;
         input.textComponent = text;
         input.placeholder = ph;
         input.text = string.Empty;
         return input;
     }
 
-    public static LazyButton CreateButton(string name, Transform parent, string label,
-        Vector2 offsetMin, Vector2 offsetMax, Vector2 anchorMin, Vector2 anchorMax)
+    public static LazyButton CreateButton(
+        string name,
+        Transform parent,
+        string label,
+        Anchors anchors,
+        Vector2 offsetMin,
+        Vector2 offsetMax
+    )
     {
-        var go = new GameObject(name, typeof(RectTransform));
-        go.transform.SetParent(parent, false);
-        var rect = (RectTransform)go.transform;
-        SetRect(rect, offsetMin, offsetMax, anchorMin, anchorMax);
+        RectTransform rect = CreateRect(name, parent);
+        SetRect(rect, anchors, offsetMin, offsetMax);
+        GameObject go = rect.gameObject;
 
         var image = go.AddComponent<Image>();
         image.color = new Color(0.28f, 0.12f, 0.07f, 1f);
@@ -127,7 +158,7 @@ internal static class MenuUi
         button.targetGraphic = image;
         go.AddComponent<GamepadNavigationItem>();
 
-        var text = CreateText("Label", go.transform, 17f, TextAlignmentOptions.Center, Color.white);
+        var text = CreateText("Label", go.transform, 17f, TextAlignmentOptions.Center);
         Stretch(text.rectTransform);
         text.text = label;
         return button;
@@ -230,11 +261,10 @@ internal static class MenuUi
         rect.offsetMax = Vector2.zero;
     }
 
-    public static void SetRect(RectTransform rect, Vector2 offsetMin, Vector2 offsetMax,
-        Vector2 anchorMin, Vector2 anchorMax)
+    public static void SetRect(RectTransform rect, Anchors anchors, Vector2 offsetMin, Vector2 offsetMax)
     {
-        rect.anchorMin = anchorMin;
-        rect.anchorMax = anchorMax;
+        rect.anchorMin = anchors.Min;
+        rect.anchorMax = anchors.Max;
         rect.offsetMin = offsetMin;
         rect.offsetMax = offsetMax;
     }

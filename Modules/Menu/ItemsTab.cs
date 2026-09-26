@@ -39,8 +39,7 @@ internal sealed class ItemsTab : IMenuTab
         BuildCategories();
 
         _search = MenuUi.CreateInputField("Search", content, "Search…", 12f);
-        MenuUi.SetRect((RectTransform)_search.transform,
-            new Vector2(0f, -28f), new Vector2(0f, 0f), new Vector2(0f, 1f), new Vector2(1f, 1f));
+        MenuUi.SetRect((RectTransform)_search.transform, Anchors.Top, new Vector2(0f, -28f), new Vector2(0f, 0f));
         _search.onValueChanged.AddListener(_ => Refilter());
 
         BuildCategoryRow(content);
@@ -108,68 +107,49 @@ internal sealed class ItemsTab : IMenuTab
 
     private void BuildCategoryRow(RectTransform content)
     {
-        var rowGo = new GameObject("CategoryRow", typeof(RectTransform));
-        var row = (RectTransform)rowGo.transform;
-        row.SetParent(content, false);
-        MenuUi.SetRect(row,
-            new Vector2(0f, -60f), new Vector2(0f, -32f), new Vector2(0f, 1f), new Vector2(1f, 1f));
+        RectTransform row = MenuUi.CreateRect("CategoryRow", content);
+        MenuUi.SetRect(row, Anchors.Top, new Vector2(0f, -60f), new Vector2(0f, -32f));
 
-        _countText = MenuUi.CreateText("Count", row, 11f, TextAlignmentOptions.Right, Color.white);
+        _countText = MenuUi.CreateText("Count", row, 11f, TextAlignmentOptions.Right);
         MenuUi.ApplyLabelText(_countText);
-        MenuUi.SetRect(_countText.rectTransform,
-            new Vector2(-72f, 0f), new Vector2(0f, 0f), new Vector2(1f, 0f), new Vector2(1f, 1f));
+        MenuUi.SetRect(_countText.rectTransform, Anchors.Right, new Vector2(-72f, 0f), new Vector2(0f, 0f));
 
-        var cyclerGo = new GameObject("Category", typeof(RectTransform));
-        var cycler = (RectTransform)cyclerGo.transform;
-        cycler.SetParent(row, false);
-        MenuUi.SetRect(cycler,
-            new Vector2(0f, 0f), new Vector2(-78f, 0f), Vector2.zero, Vector2.one);
+        RectTransform cycler = MenuUi.CreateRect("Category", row);
+        MenuUi.SetRect(cycler, Anchors.Fill, new Vector2(0f, 0f), new Vector2(-78f, 0f));
 
         Image field = MenuUi.CreateImage("Field", cycler, new Color(0.2f, 0.1f, 0.07f, 1f));
-        MenuUi.SetRect(field.rectTransform,
-            new Vector2(28f, 0f), new Vector2(-28f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(field.rectTransform, Anchors.Fill, new Vector2(28f, 0f), new Vector2(-28f, 0f));
         field.raycastTarget = false;
         MenuUi.ApplyCell(field);
 
-        _categoryLabel = MenuUi.CreateText("Value", cycler, 12f, TextAlignmentOptions.Center, Color.white);
+        _categoryLabel = MenuUi.CreateText("Value", cycler, 12f, TextAlignmentOptions.Center);
         MenuUi.ApplyValueText(_categoryLabel);
-        MenuUi.SetRect(_categoryLabel.rectTransform,
-            new Vector2(28f, 0f), new Vector2(-28f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(_categoryLabel.rectTransform, Anchors.Fill, new Vector2(28f, 0f), new Vector2(-28f, 0f));
         _categoryLabel.text = _catLabels[_categoryIndex];
 
-        LazyButton prev = MenuUi.CreateButton("Prev", cycler, "<",
-            new Vector2(0f, 0f), new Vector2(26f, 0f), Vector2.zero, new Vector2(0f, 1f));
-        LazyButton next = MenuUi.CreateButton("Next", cycler, ">",
-            new Vector2(-26f, 0f), new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.one);
+        LazyButton prev = MenuUi.CreateButton("Prev", cycler, "<", Anchors.Left, Vector2.zero, new Vector2(26f, 0f));
+        LazyButton next = MenuUi.CreateButton("Next", cycler, ">", Anchors.Right, new Vector2(-26f, 0f), Vector2.zero);
         prev.onClick.AddListener(() => CycleCategory(-1));
         next.onClick.AddListener(() => CycleCategory(1));
     }
 
     private void BuildList(RectTransform content)
     {
-        var scrollGo = new GameObject("ItemList", typeof(RectTransform));
-        var scrollRect = (RectTransform)scrollGo.transform;
-        scrollRect.SetParent(content, false);
-        MenuUi.SetRect(scrollRect,
-            new Vector2(0f, 0f), new Vector2(0f, -64f), Vector2.zero, Vector2.one);
-        _scroll = scrollGo.AddComponent<ScrollRect>();
+        RectTransform scrollRect = MenuUi.CreateRect("ItemList", content);
+        MenuUi.SetRect(scrollRect, Anchors.Fill, new Vector2(0f, 0f), new Vector2(0f, -64f));
+        _scroll = scrollRect.gameObject.AddComponent<ScrollRect>();
         _scroll.horizontal = false;
         _scroll.vertical = true;
         _scroll.scrollSensitivity = 24f;
         _scroll.movementType = ScrollRect.MovementType.Clamped;
 
-        var viewportGo = new GameObject("Viewport", typeof(RectTransform));
-        var viewport = (RectTransform)viewportGo.transform;
-        viewport.SetParent(scrollRect, false);
+        RectTransform viewport = MenuUi.CreateRect("Viewport", scrollRect);
         MenuUi.Stretch(viewport);
-        var viewportImage = viewportGo.AddComponent<Image>();
-        viewportImage.color = new Color(0f, 0f, 0f, 0.001f);
-        viewportGo.AddComponent<RectMask2D>();
+        viewport.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.001f);
+        viewport.gameObject.AddComponent<RectMask2D>();
         _scroll.viewport = viewport;
 
-        var contentGo = new GameObject("Content", typeof(RectTransform));
-        _listContent = (RectTransform)contentGo.transform;
-        _listContent.SetParent(viewport, false);
+        _listContent = MenuUi.CreateRect("Content", viewport);
         _listContent.anchorMin = new Vector2(0f, 1f);
         _listContent.anchorMax = new Vector2(1f, 1f);
         _listContent.pivot = new Vector2(0.5f, 1f);
@@ -192,9 +172,7 @@ internal sealed class ItemsTab : IMenuTab
     {
         var row = new ItemRow();
 
-        var go = new GameObject("Row", typeof(RectTransform));
-        row.Root = (RectTransform)go.transform;
-        row.Root.SetParent(_listContent, false);
+        row.Root = MenuUi.CreateRect("Row", _listContent);
         row.Root.anchorMin = new Vector2(0f, 1f);
         row.Root.anchorMax = new Vector2(1f, 1f);
         row.Root.pivot = new Vector2(0.5f, 1f);
@@ -202,28 +180,40 @@ internal sealed class ItemsTab : IMenuTab
         row.Root.anchoredPosition = new Vector2(0f, -index * RowHeight);
 
         row.Icon = MenuUi.CreateImage("Icon", row.Root, Color.white);
-        MenuUi.SetRect(row.Icon.rectTransform,
-            new Vector2(2f, 6f), new Vector2(30f, -6f), new Vector2(0f, 0f), new Vector2(0f, 1f));
+        MenuUi.SetRect(row.Icon.rectTransform, Anchors.Left, new Vector2(2f, 6f), new Vector2(30f, -6f));
         row.Icon.raycastTarget = false;
         row.Icon.preserveAspect = true;
 
-        row.Name = MenuUi.CreateText("Name", row.Root, 12f, TextAlignmentOptions.BottomLeft, Color.white);
-        MenuUi.SetRect(row.Name.rectTransform,
-            new Vector2(36f, 0f), new Vector2(-88f, -1f), new Vector2(0f, 0.5f), new Vector2(1f, 1f));
+        row.Name = MenuUi.CreateText("Name", row.Root, 12f, TextAlignmentOptions.BottomLeft);
+        MenuUi.SetRect(
+            row.Name.rectTransform,
+            new Anchors(new Vector2(0f, 0.5f), Vector2.one),
+            new Vector2(36f, 0f),
+            new Vector2(-88f, -1f)
+        );
 
-        row.Id = MenuUi.CreateText("Id", row.Root, 10f, TextAlignmentOptions.TopLeft, Color.white);
+        row.Id = MenuUi.CreateText("Id", row.Root, 10f, TextAlignmentOptions.TopLeft);
         MenuUi.ApplyLabelText(row.Id);
-        MenuUi.SetRect(row.Id.rectTransform,
-            new Vector2(36f, 1f), new Vector2(-88f, 0f), new Vector2(0f, 0f), new Vector2(1f, 0.5f));
+        MenuUi.SetRect(
+            row.Id.rectTransform,
+            new Anchors(Vector2.zero, new Vector2(1f, 0.5f)),
+            new Vector2(36f, 1f),
+            new Vector2(-88f, 0f)
+        );
 
-        row.Amount = MenuUi.CreateInputField("Amount", row.Root, "1", 12f,
-            TMP_InputField.ContentType.IntegerNumber);
-        MenuUi.SetRect((RectTransform)row.Amount.transform,
-            new Vector2(-84f, 6f), new Vector2(-48f, -6f), new Vector2(1f, 0f), new Vector2(1f, 1f));
+        row.Amount = MenuUi.CreateInputField("Amount", row.Root, "1", 12f, TMP_InputField.ContentType.IntegerNumber);
+        var amountRect = (RectTransform)row.Amount.transform;
+        MenuUi.SetRect(amountRect, Anchors.Right, new Vector2(-84f, 6f), new Vector2(-48f, -6f));
         row.Amount.text = "1";
 
-        LazyButton give = MenuUi.CreateButton("Give", row.Root, "Give",
-            new Vector2(-44f, 6f), new Vector2(-4f, -6f), new Vector2(1f, 0f), new Vector2(1f, 1f));
+        LazyButton give = MenuUi.CreateButton(
+            "Give",
+            row.Root,
+            "Give",
+            Anchors.Right,
+            new Vector2(-44f, 6f),
+            new Vector2(-4f, -6f)
+        );
         TextMeshProUGUI giveLabel = give.GetComponentInChildren<TextMeshProUGUI>(true);
         if (giveLabel != null)
         {

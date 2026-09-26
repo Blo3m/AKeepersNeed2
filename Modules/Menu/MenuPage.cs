@@ -67,8 +67,7 @@ internal sealed class MenuPage
 
         AddRule(band, "RuleL", ruleColor);
 
-        TextMeshProUGUI name = MenuUi.CreateText("Section", band, 12f,
-            TextAlignmentOptions.Center, Color.white);
+        TextMeshProUGUI name = MenuUi.CreateText("Section", band, 12f, TextAlignmentOptions.Center);
         MenuUi.ApplyLabelText(name);
         var element = name.gameObject.AddComponent<LayoutElement>();
         element.flexibleWidth = 0f;
@@ -99,19 +98,13 @@ internal sealed class MenuPage
             _syncs.Add(SyncEnabled);
         }
 
-        TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f,
-            TextAlignmentOptions.Left, Color.white);
+        TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f, TextAlignmentOptions.Left);
         MenuUi.ApplyLabelText(name);
-        MenuUi.SetRect(name.rectTransform,
-            new Vector2(0f, 0f), new Vector2(-84f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(name.rectTransform, Anchors.Fill, new Vector2(0f, 0f), new Vector2(-84f, 0f));
         name.text = label;
 
-        var go = new GameObject("Toggle", typeof(RectTransform));
-        var rect = (RectTransform)go.transform;
-        rect.SetParent(band, false);
-        MenuUi.SetRect(rect,
-            new Vector2(-76f, 3f), new Vector2(0f, -3f),
-            new Vector2(1f, 0f), new Vector2(1f, 1f));
+        RectTransform rect = MenuUi.CreateRect("Toggle", band);
+        MenuUi.SetRect(rect, Anchors.Right, new Vector2(-76f, 3f), new Vector2(0f, -3f));
         _syncs.Add(FillToggle(rect, get, set));
     }
 
@@ -143,8 +136,7 @@ internal sealed class MenuPage
         toggle.targetGraphic = bg;
         rect.gameObject.AddComponent<GamepadNavigationItem>();
 
-        TextMeshProUGUI value = MenuUi.CreateText("Value", rect, 13f,
-            TextAlignmentOptions.Center, Color.white);
+        TextMeshProUGUI value = MenuUi.CreateText("Value", rect, 13f, TextAlignmentOptions.Center);
         MenuUi.ApplyValueText(value);
         MenuUi.Stretch(value.rectTransform);
 
@@ -172,12 +164,19 @@ internal sealed class MenuPage
     /// Builds a slider with a centered value label that fills <paramref name="parent"/>.
     /// <paramref name="sync"/> re-reads <paramref name="get"/> without calling <paramref name="set"/>.
     /// </summary>
-    public static Slider FillSlider(RectTransform parent, float min, float max, string format,
-        Func<float> get, Action<float> set, out Action sync)
+    public static Slider FillSlider(
+        RectTransform parent,
+        float min,
+        float max,
+        string format,
+        Func<float> get,
+        Action<float> set,
+        out Action sync
+    )
     {
-        var go = new GameObject("Slider", typeof(RectTransform));
-        go.transform.SetParent(parent, false);
-        MenuUi.Stretch((RectTransform)go.transform);
+        RectTransform area = MenuUi.CreateRect("Slider", parent);
+        MenuUi.Stretch(area);
+        GameObject go = area.gameObject;
         var slider = go.AddComponent<Slider>();
 
         Image bg = MenuUi.CreateImage("Background", go.transform, new Color(0.2f, 0.1f, 0.07f, 1f));
@@ -218,8 +217,7 @@ internal sealed class MenuPage
         slider.maxValue = max;
         slider.value = get();
 
-        TextMeshProUGUI value = MenuUi.CreateText("Value", parent, 12f,
-            TextAlignmentOptions.Center, Color.white);
+        TextMeshProUGUI value = MenuUi.CreateText("Value", parent, 12f, TextAlignmentOptions.Center);
         MenuUi.ApplyValueText(value);
         MenuUi.Stretch(value.rectTransform);
 
@@ -261,12 +259,8 @@ internal sealed class MenuPage
     {
         _cursorTop -= topGap;
 
-        var go = new GameObject("Band", typeof(RectTransform));
-        var band = (RectTransform)go.transform;
-        band.SetParent(_content, false);
-        MenuUi.SetRect(band,
-            new Vector2(0f, _cursorTop - height), new Vector2(0f, _cursorTop),
-            new Vector2(0f, 1f), new Vector2(1f, 1f));
+        RectTransform band = MenuUi.CreateRect("Band", _content);
+        MenuUi.SetRect(band, Anchors.Top, new Vector2(0f, _cursorTop - height), new Vector2(0f, _cursorTop));
 
         _cursorTop -= height;
         return band;

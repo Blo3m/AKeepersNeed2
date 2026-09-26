@@ -45,7 +45,7 @@ internal sealed class SettingsTab : IMenuTab
         ));
 
         _page.SectionHeader("Interface");
-        _window.BuildUiScaleControl(_page.Band(28f, 8f));
+        _window.UiScale.BuildControl(_page.Band(28f, 8f));
 
         _page.SectionHeader("Controls");
         _page.AddSync(rebinder.BuildRow(
@@ -88,23 +88,18 @@ internal sealed class SettingsTab : IMenuTab
     private void BuildProfileSelector(RectTransform band)
     {
         Image field = MenuUi.CreateImage("ProfileField", band, new Color(0.2f, 0.1f, 0.07f, 1f));
-        MenuUi.SetRect(field.rectTransform,
-            new Vector2(40f, 0f), new Vector2(-40f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(field.rectTransform, Anchors.Fill, new Vector2(40f, 0f), new Vector2(-40f, 0f));
         field.raycastTarget = false;
         MenuUi.ApplyCell(field);
 
-        _profileName = MenuUi.CreateText("ProfileName", band, 13f,
-            TextAlignmentOptions.Center, Color.white);
+        _profileName = MenuUi.CreateText("ProfileName", band, 13f, TextAlignmentOptions.Center);
         MenuUi.ApplyValueText(_profileName);
-        MenuUi.SetRect(_profileName.rectTransform,
-            new Vector2(46f, 0f), new Vector2(-46f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(_profileName.rectTransform, Anchors.Fill, new Vector2(46f, 0f), new Vector2(-46f, 0f));
         _profileName.textWrappingMode = TextWrappingModes.NoWrap;
         _profileName.overflowMode = TextOverflowModes.Ellipsis;
 
-        LazyButton prev = MenuUi.CreateButton("Prev", band, "<",
-            new Vector2(0f, 0f), new Vector2(34f, 0f), Vector2.zero, new Vector2(0f, 1f));
-        LazyButton next = MenuUi.CreateButton("Next", band, ">",
-            new Vector2(-34f, 0f), new Vector2(0f, 0f), new Vector2(1f, 0f), Vector2.one);
+        LazyButton prev = MenuUi.CreateButton("Prev", band, "<", Anchors.Left, Vector2.zero, new Vector2(34f, 0f));
+        LazyButton next = MenuUi.CreateButton("Next", band, ">", Anchors.Right, new Vector2(-34f, 0f), Vector2.zero);
 
         prev.onClick.AddListener(() => ProfileStore.SwitchRelative(-1));
         next.onClick.AddListener(() => ProfileStore.SwitchRelative(1));
@@ -144,9 +139,14 @@ internal sealed class SettingsTab : IMenuTab
     private static LazyButton ActionButton(RectTransform band, int slot, string label)
     {
         const float step = 0.25f;
-        LazyButton button = MenuUi.CreateButton(label, band, label,
-            new Vector2(slot == 0 ? 0f : 2f, 0f), new Vector2(slot == 3 ? 0f : -2f, 0f),
-            new Vector2(slot * step, 0f), new Vector2((slot + 1) * step, 1f));
+        LazyButton button = MenuUi.CreateButton(
+            label,
+            band,
+            label,
+            new Anchors(new Vector2(slot * step, 0f), new Vector2((slot + 1) * step, 1f)),
+            new Vector2(slot == 0 ? 0f : 2f, 0f),
+            new Vector2(slot == 3 ? 0f : -2f, 0f)
+        );
         TextMeshProUGUI text = button.GetComponentInChildren<TextMeshProUGUI>(true);
         if (text != null)
         {

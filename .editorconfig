@@ -1,0 +1,5 @@
+root = true
+
+[*.cs]
+max_line_length = 120
+guidelines = 120

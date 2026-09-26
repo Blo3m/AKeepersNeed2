@@ -17,15 +17,20 @@ internal sealed class PlayerTab : IMenuTab
         _page.ToggleRow(
             "Energy Regen",
             () => ModConfig.EnergyRegenEnabled.Value,
-            v => ModConfig.EnergyRegenEnabled.Value = v);
+            v => ModConfig.EnergyRegenEnabled.Value = v
+        );
         _page.SliderRow(
-            0.1f, 10f, "0.0",
+            0.1f,
+            10f,
+            "0.0",
             () => ModConfig.EnergyRegenRate.Value,
-            v => ModConfig.EnergyRegenRate.Value = v);
+            v => ModConfig.EnergyRegenRate.Value = v
+        );
         _page.ToggleRow(
             "No Energy Drain",
             () => ModConfig.NoEnergyDrainEnabled.Value,
-            v => ModConfig.NoEnergyDrainEnabled.Value = v);
+            v => ModConfig.NoEnergyDrainEnabled.Value = v
+        );
     }
 
     public void Refresh()

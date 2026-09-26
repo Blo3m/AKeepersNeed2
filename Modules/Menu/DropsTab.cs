@@ -17,29 +17,41 @@ internal sealed class DropsTab : IMenuTab
         _page.ToggleRow(
             "Resource Drops",
             () => ModConfig.ResourceDropsEnabled.Value,
-            v => ModConfig.ResourceDropsEnabled.Value = v);
+            v => ModConfig.ResourceDropsEnabled.Value = v
+        );
         _page.SliderRow(
-            1f, 10f, "0.0",
+            1f,
+            10f,
+            "0.0",
             () => ModConfig.ResourceDropMultiplier.Value,
-            v => ModConfig.ResourceDropMultiplier.Value = v);
+            v => ModConfig.ResourceDropMultiplier.Value = v
+        );
         _page.ToggleRow(
             "Tech Points",
             () => ModConfig.TechPointsEnabled.Value,
-            v => ModConfig.TechPointsEnabled.Value = v);
+            v => ModConfig.TechPointsEnabled.Value = v
+        );
         _page.SliderRow(
-            1f, 10f, "0.0",
+            1f,
+            10f,
+            "0.0",
             () => ModConfig.TechPointsMultiplier.Value,
-            v => ModConfig.TechPointsMultiplier.Value = v);
+            v => ModConfig.TechPointsMultiplier.Value = v
+        );
 
         _page.SectionHeader("Crafting");
         _page.ToggleRow(
             "Craft Output",
             () => ModConfig.CraftDropsEnabled.Value,
-            v => ModConfig.CraftDropsEnabled.Value = v);
+            v => ModConfig.CraftDropsEnabled.Value = v
+        );
         _page.SliderRow(
-            1f, 10f, "0.0",
+            1f,
+            10f,
+            "0.0",
             () => ModConfig.CraftDropMultiplier.Value,
-            v => ModConfig.CraftDropMultiplier.Value = v);
+            v => ModConfig.CraftDropMultiplier.Value = v
+        );
     }
 
     public void Refresh()

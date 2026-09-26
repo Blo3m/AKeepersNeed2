@@ -46,14 +46,19 @@ internal sealed class KeyRebinder
         bool isMenuKey = false
     )
     {
-        TextMeshProUGUI name = MenuUi.CreateText("Label", band, 13f, TextAlignmentOptions.Left, Color.white);
+        TextMeshProUGUI name = MenuUi.CreateText("Label", band, 13f, TextAlignmentOptions.Left);
         MenuUi.ApplyLabelText(name);
-        MenuUi.SetRect(name.rectTransform,
-            new Vector2(0f, 0f), new Vector2(-114f, 0f), Vector2.zero, Vector2.one);
+        MenuUi.SetRect(name.rectTransform, Anchors.Fill, new Vector2(0f, 0f), new Vector2(-114f, 0f));
         name.text = label;
 
-        LazyButton button = MenuUi.CreateButton("Rebind", band, string.Empty,
-            new Vector2(-110f, 2f), new Vector2(0f, -2f), new Vector2(1f, 0f), new Vector2(1f, 1f));
+        LazyButton button = MenuUi.CreateButton(
+            "Rebind",
+            band,
+            string.Empty,
+            Anchors.Right,
+            new Vector2(-110f, 2f),
+            new Vector2(0f, -2f)
+        );
         var row = new Row
         {
             Label = button.GetComponentInChildren<TextMeshProUGUI>(true),
