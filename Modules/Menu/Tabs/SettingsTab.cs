@@ -1,3 +1,5 @@
+using AKeepersNeed2.Modules.Menu.Controls;
+using AKeepersNeed2.Modules.Menu.Keybinds;
 using AKeepersNeed2.Shared.Profiles;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
@@ -5,7 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
 /// Menu-level settings: the profile selector and management (new / rename / delete / reset,
@@ -101,23 +103,25 @@ internal sealed class SettingsTab : IMenuTab
         _delete = ActionButton(band, 2, "Delete");
         LazyButton reset = ActionButton(band, 3, "Reset");
 
-        create.onClick.AddListener(() => _window.ShowNamePrompt(
+        create.onClick.AddListener(() => _window.Dialogs.ShowNamePrompt(
             "New profile",
             ProfileStore.SuggestName(),
+            ProfileStore.MaxNameLength,
             ProfileStore.Create
         ));
-        _rename.onClick.AddListener(() => _window.ShowNamePrompt(
+        _rename.onClick.AddListener(() => _window.Dialogs.ShowNamePrompt(
             "Rename profile",
             ProfileStore.Active.Name,
+            ProfileStore.MaxNameLength,
             name => ProfileStore.Rename(ProfileStore.Active, name)
         ));
-        _delete.onClick.AddListener(() => _window.ShowConfirm(
+        _delete.onClick.AddListener(() => _window.Dialogs.ShowConfirm(
             "Delete profile?",
             $"\"{ProfileStore.Active.Name}\" will be removed.",
             "Delete",
             () => ProfileStore.Delete(ProfileStore.Active)
         ));
-        reset.onClick.AddListener(() => _window.ShowConfirm(
+        reset.onClick.AddListener(() => _window.Dialogs.ShowConfirm(
             "Reset profile?",
             $"Every option in \"{ProfileStore.Active.Name}\" goes back to its default.",
             "Reset",

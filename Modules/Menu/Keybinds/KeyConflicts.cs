@@ -6,7 +6,7 @@ using BepInEx.Configuration;
 using LazyBearTechnology;
 using UnityEngine;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Keybinds;
 
 /// <summary>One binding that already uses a key: a mod hotkey or a game action.</summary>
 internal sealed class KeyConflict

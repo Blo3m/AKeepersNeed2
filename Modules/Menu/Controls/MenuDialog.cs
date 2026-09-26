@@ -5,7 +5,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Controls;
 
 /// <summary>
 /// Small centred dialogs for the menu, styled like the game's framed popups: a bare frame

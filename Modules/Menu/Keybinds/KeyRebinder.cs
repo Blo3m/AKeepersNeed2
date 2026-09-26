@@ -7,7 +7,7 @@ using LazyBearTechnology;
 using TMPro;
 using UnityEngine;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Keybinds;
 
 /// <summary>
 /// "Label [Key]" rows that capture the next keypress to rebind a hotkey. Esc, Backspace and
@@ -226,11 +226,11 @@ internal sealed class KeyRebinder
         // The menu key and game actions can't be taken, so there's nothing to replace: just say so.
         if (conflicts.Any(c => !c.Replaceable))
         {
-            _window.ShowMessage("Key in use", $"{KeyName(key)} is used by {names}.", 150f);
+            _window.Dialogs.ShowMessage("Key in use", $"{KeyName(key)} is used by {names}.", 150f);
             return;
         }
 
-        _window.ShowConfirm(
+        _window.Dialogs.ShowConfirm(
             "Key in use",
             $"{KeyName(key)} is used by {names}.\nReplace it? {names} will be unbound.",
             "Replace",

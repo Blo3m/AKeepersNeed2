@@ -4,7 +4,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Controls;
 
 /// <summary>
 /// The UI-scale control on the Settings tab. Dragging the slider shows a translucent ghost of

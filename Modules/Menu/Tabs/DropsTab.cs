@@ -1,6 +1,7 @@
+using AKeepersNeed2.Modules.Menu.Controls;
 using UnityEngine;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>Yield multipliers: resource/harvest drops, tech points, and craft output.</summary>
 internal sealed class DropsTab : IMenuTab

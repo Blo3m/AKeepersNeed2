@@ -1,6 +1,7 @@
+using AKeepersNeed2.Modules.Menu.Controls;
 using UnityEngine;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>Cost and time bypasses for crafting and building.</summary>
 internal sealed class CraftingTab : IMenuTab

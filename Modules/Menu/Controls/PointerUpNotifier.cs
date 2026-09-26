@@ -2,7 +2,7 @@ using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Controls;
 
 /// <summary>
 /// Fires <see cref="Released"/> when the pointer is released on (or after dragging) the

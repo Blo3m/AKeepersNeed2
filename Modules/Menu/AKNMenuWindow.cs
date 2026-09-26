@@ -1,4 +1,7 @@
 using System;
+using AKeepersNeed2.Modules.Menu.Controls;
+using AKeepersNeed2.Modules.Menu.Keybinds;
+using AKeepersNeed2.Modules.Menu.Tabs;
 using AKeepersNeed2.Shared.Profiles;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
@@ -10,17 +13,16 @@ namespace AKeepersNeed2.Modules.Menu;
 
 /// <summary>
 /// The mod's menu: a from-scratch uGUI window styled from the game's own assets
-/// (<see cref="NativeUiSkin"/>) and subclassing the game's <c>LazyWindow</c> so it joins the
-/// native window stack/input. A title header (showing the active profile) and a footer
-/// (<see cref="MenuTabBar"/>) frame a content area that swaps between
-/// <see cref="IMenuTab"/> pages. It also owns the state tabs share: the
-/// <see cref="UiScalePreview"/>, the <see cref="KeyRebinder"/>, and the one open
-/// <see cref="MenuDialog"/>. Tabs re-read their values on open and whenever
+/// (<see cref="NativeUiSkin"/>, built by <see cref="MenuChrome"/>) and subclassing the game's
+/// <c>LazyWindow</c> so it joins the native window stack/input. A title header (showing the
+/// active profile) and a footer (<see cref="MenuTabBar"/>) frame a content area that swaps
+/// between <see cref="IMenuTab"/> pages. It also owns the state tabs share: the
+/// <see cref="UiScalePreview"/>, the <see cref="KeyRebinder"/>, and the
+/// <see cref="MenuDialogHost"/>. Tabs re-read their values on open and whenever
 /// <see cref="ProfileStore"/> changes. See docs/UI.md.
 /// </summary>
 internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 {
-    private const float PanelWidth = 340f;
     private const float SidePadding = 20f;
     private const float TabBarBottom = 26f;
     private const float TabBarHeight = 32f;
@@ -28,6 +30,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private const string MenuTitle = "A Keeper's Need 2";
 
     private KeyRebinder _rebinder;
+    private MenuDialogHost _dialogs;
     private bool _textInputFocusedLastFrame;
 
     private IMenuTab[] _tabs;
@@ -36,11 +39,13 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private TextMeshProUGUI _title;
     private MenuTabBar _tabBar;
     private UiScalePreview _uiScale;
-    private GameObject _dialog;
 
     public KeyRebinder Rebinder => _rebinder;
 
     public UiScalePreview UiScale => _uiScale;
+
+    /// <summary>The menu's one-at-a-time dialogs (confirm, message, name prompt).</summary>
+    public MenuDialogHost Dialogs => _dialogs;
 
     public static AKNMenuWindow CreateInstance()
     {
@@ -71,6 +76,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     private void BuildUi()
     {
         _rebinder = new KeyRebinder(this);
+        _dialogs = new MenuDialogHost(transform);
 
         // Built here (not a field initializer) so tabs can capture this window.
         _tabs = new IMenuTab[]
@@ -84,37 +90,10 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         };
 
         MenuUi.Stretch((RectTransform)transform);
-
-        float shadeAlpha = NativeUiSkin.IsReady ? 0.4f : 0.72f;
-        Image shade = MenuUi.CreateImage("Shade", transform, new Color(0f, 0f, 0f, shadeAlpha));
-        MenuUi.Stretch(shade.rectTransform);
-
-        Color panelColor = NativeUiSkin.IsReady ? Color.clear : new Color(0.055f, 0.035f, 0.03f, 0.99f);
-        Image panel = MenuUi.CreateImage("Panel", transform, panelColor);
-        _panelRect = panel.rectTransform;
-        _panelRect.anchorMin = new Vector2(1f, 0f);
-        _panelRect.anchorMax = new Vector2(1f, 1f);
-        _panelRect.pivot = new Vector2(1f, 0.5f);
-        _panelRect.sizeDelta = new Vector2(PanelWidth, 0f);
-        _panelRect.anchoredPosition = Vector2.zero;
+        _panelRect = MenuChrome.BuildPanel(transform);
         _uiScale = new UiScalePreview(transform, _panelRect);
+        _title = MenuChrome.BuildHeader(_panelRect, MenuTitle);
 
-        if (NativeUiSkin.IsReady)
-        {
-            Image inner = MenuUi.CreateImage("InnerBackground", _panelRect, new Color(0.105f, 0.112f, 0.14f, 1f));
-            // Starts under the header (which ends at -36 and draws on top) so no see-through
-            // strip is left between them; the header sprite's bottom edge is partly transparent.
-            MenuUi.SetRect(inner.rectTransform, Anchors.Fill, new Vector2(13f, 13f), new Vector2(-13f, -24f));
-            inner.raycastTarget = false;
-
-            Image frame = MenuUi.CreateImage("Frame", _panelRect, Color.white);
-            MenuUi.Stretch(frame.rectTransform);
-            MenuUi.ApplyFrame(frame);
-            frame.raycastTarget = false;
-            frame.transform.SetAsLastSibling();
-        }
-
-        BuildHeader();
         BuildContent();
         BuildFooter();
         // Settings sits first but is rarely what you open the menu for.
@@ -133,27 +112,6 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         _title.text = active != null
             ? $"{MenuTitle} — {active.Name}"
             : MenuTitle;
-    }
-
-    private void BuildHeader()
-    {
-        Color headerColor = NativeUiSkin.IsReady ? Color.white : new Color(0.12f, 0.07f, 0.055f, 1f);
-        Image header = MenuUi.CreateImage("Header", _panelRect, headerColor);
-        MenuUi.SetRect(header.rectTransform, Anchors.Top, new Vector2(12f, -36f), new Vector2(-12f, -12f));
-        if (NativeUiSkin.IsReady && NativeUiSkin.HeaderSprite != null)
-        {
-            header.sprite = NativeUiSkin.HeaderSprite;
-            header.type = Image.Type.Sliced;
-            header.color = Color.white;
-        }
-
-        float titleSize = NativeUiSkin.IsReady ? 13f : 18f;
-        _title = MenuUi.CreateText("Title", header.rectTransform, titleSize, TextAlignmentOptions.Center);
-        MenuUi.SetRect(_title.rectTransform, Anchors.Fill, new Vector2(10f, 0f), new Vector2(-10f, 0f));
-        MenuUi.ApplyHeaderText(_title);
-        _title.textWrappingMode = TextWrappingModes.NoWrap;
-        _title.overflowMode = TextOverflowModes.Ellipsis;
-        _title.text = MenuTitle;
     }
 
     private void BuildContent()
@@ -204,35 +162,6 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         ProfileStore.Changed -= RefreshAll;
     }
 
-    // --- Dialogs (one at a time; closed with the window) ---
-
-    public void ShowConfirm(string title, string message, string confirmLabel, Action onConfirm, float height = 132f)
-    {
-        CloseDialog();
-        _dialog = MenuDialog.ShowConfirm(transform, title, message, confirmLabel, onConfirm, height);
-    }
-
-    public void ShowMessage(string title, string message, float height = 132f)
-    {
-        CloseDialog();
-        _dialog = MenuDialog.ShowMessage(transform, title, message, height);
-    }
-
-    public void ShowNamePrompt(string title, string initial, Func<string, string> submit)
-    {
-        CloseDialog();
-        _dialog = MenuDialog.ShowNamePrompt(transform, title, initial, ProfileStore.MaxNameLength, submit);
-    }
-
-    private void CloseDialog()
-    {
-        if (_dialog != null)
-        {
-            Destroy(_dialog);
-            _dialog = null;
-        }
-    }
-
     /// <summary>
     /// Per-frame input hook, called from <c>MenuModule.Tick</c>. Returns true while a rebind is
     /// listening so the caller doesn't also treat the keypress as a menu toggle.
@@ -246,7 +175,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     {
         _uiScale.Cancel();
         _rebinder?.Cancel();
-        CloseDialog();
+        _dialogs?.Close();
     }
 
     // Read by OnPressedBack: a text field handles Esc itself (reverts and unfocuses), possibly
@@ -266,9 +195,9 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         {
             return true;
         }
-        if (_dialog != null)
+        if (_dialogs != null && _dialogs.IsOpen)
         {
-            CloseDialog();
+            _dialogs.Close();
             return true;
         }
         if (_textInputFocusedLastFrame || InputGate.IsTextInputFocused())

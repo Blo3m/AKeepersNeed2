@@ -6,7 +6,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Controls;
 
 /// <summary>
 /// Vertical layout helper for a tab's content: stacks section dividers, toggle rows and

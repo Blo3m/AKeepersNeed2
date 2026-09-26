@@ -1,6 +1,7 @@
+using AKeepersNeed2.Modules.Menu.Controls;
 using UnityEngine;
 
-namespace AKeepersNeed2.Modules.Menu;
+namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>World-map tweaks: zone reveal, milestone unlock, NPC faces and map teleport.</summary>
 internal sealed class MapTab : IMenuTab
