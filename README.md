@@ -5,11 +5,13 @@ A [BepInEx](https://github.com/BepInEx/BepInEx) mod for **Graveyard Keeper 2**.
 ## Features
 
 Everything is configured in-game through a native-styled menu (default hotkey **F1**) with
-sideways-scrollable tabs.
+sideways-scrollable tabs. Pages taller than the window scroll vertically.
 
 **Player**
 - **Energy regen** — passive energy regeneration while awake (energy per 5s)
 - **No energy drain** — energy never decreases
+- **Tech points** — view and set your red, green and blue tech points and happiness
+- **Reputation** — pick an NPC and view or set your reputation with them
 
 **Drops**
 - **Resource drops** — multiply loot from destroyed/harvested world objects

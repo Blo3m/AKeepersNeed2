@@ -18,14 +18,41 @@ namespace AKeepersNeed2.Modules.Menu;
 internal sealed class MenuPage
 {
     private const float DisabledAlpha = 0.45f;
+    private const float BottomPadding = 8f;
+    private const float MaskOverhang = 10f;
 
     private readonly RectTransform _content;
     private readonly List<Action> _syncs = new List<Action>();
     private float _cursorTop;
 
-    public MenuPage(RectTransform content)
+    /// <summary>
+    /// Wraps <paramref name="page"/> in a vertical <see cref="ScrollRect"/>. Rows go into its
+    /// content, which grows with every band, so pages taller than the window scroll.
+    /// </summary>
+    public MenuPage(RectTransform page)
     {
-        _content = content;
+        var scroll = page.gameObject.AddComponent<ScrollRect>();
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.scrollSensitivity = 24f;
+        scroll.movementType = ScrollRect.MovementType.Clamped;
+
+        // The mask is widened past the page so slider handles, which overhang the track's ends
+        // at min/max, aren't clipped. The content is inset by the same amount to stay aligned.
+        RectTransform viewport = MenuUi.CreateRect("Viewport", page);
+        MenuUi.SetRect(viewport, Anchors.Fill, new Vector2(-MaskOverhang, 0f), new Vector2(MaskOverhang, 0f));
+        // Near-transparent so the empty space between rows still catches wheel/drag input.
+        viewport.gameObject.AddComponent<Image>().color = new Color(0f, 0f, 0f, 0.001f);
+        viewport.gameObject.AddComponent<RectMask2D>();
+        scroll.viewport = viewport;
+
+        _content = MenuUi.CreateRect("Content", viewport);
+        _content.anchorMin = new Vector2(0f, 1f);
+        _content.anchorMax = new Vector2(1f, 1f);
+        _content.pivot = new Vector2(0.5f, 1f);
+        _content.offsetMin = new Vector2(MaskOverhang, 0f);
+        _content.offsetMax = new Vector2(-MaskOverhang, 0f);
+        scroll.content = _content;
     }
 
     /// <summary>Re-reads every row's value without firing its setter.</summary>
@@ -263,6 +290,7 @@ internal sealed class MenuPage
         MenuUi.SetRect(band, Anchors.Top, new Vector2(0f, _cursorTop - height), new Vector2(0f, _cursorTop));
 
         _cursorTop -= height;
+        _content.sizeDelta = new Vector2(-2f * MaskOverhang, -_cursorTop + BottomPadding);
         return band;
     }
 }
