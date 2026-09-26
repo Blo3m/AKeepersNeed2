@@ -9,7 +9,8 @@ namespace AKeepersNeed2.Modules.Menu;
 
 /// <summary>
 /// The menu's tab strip: fixed-width tab buttons in a bar that scrolls sideways (drag / mouse
-/// wheel) once they outgrow it, keeping the selected or gamepad-focused tab in view.
+/// wheel) once they outgrow it, keeping the selected or gamepad-focused tab in view. Small
+/// "&lt;" / "&gt;" hints under the bar's corners show while there are hidden tabs that way.
 /// <see cref="Dispose"/> unhooks the static gamepad-focus event.
 /// </summary>
 internal sealed class MenuTabBar : IDisposable
@@ -19,9 +20,14 @@ internal sealed class MenuTabBar : IDisposable
     private readonly ScrollRect _scroll;
     private readonly TextMeshProUGUI[] _labels;
     private readonly GamepadNavigationItem[] _navItems;
+    private readonly TextMeshProUGUI _leftHint;
+    private readonly TextMeshProUGUI _rightHint;
 
-    /// <summary>Fills <paramref name="bar"/> with one tab per title; clicks call <paramref name="onSelect"/>.</summary>
-    public MenuTabBar(RectTransform bar, string[] titles, Action<int> onSelect)
+    /// <summary>
+    /// Fills <paramref name="bar"/> with one tab per title; clicks call <paramref name="onSelect"/>.
+    /// The scroll hints go in <paramref name="hints"/>, which must sit outside the bar's mask.
+    /// </summary>
+    public MenuTabBar(RectTransform bar, RectTransform hints, string[] titles, Action<int> onSelect)
     {
         // The clear image catches drags that start between tabs.
         bar.gameObject.AddComponent<Image>().color = Color.clear;
@@ -64,7 +70,38 @@ internal sealed class MenuTabBar : IDisposable
             button.onClick.AddListener(() => onSelect(index));
         }
 
+        _leftHint = CreateHint("Left", hints, "<", TextAlignmentOptions.Left);
+        _rightHint = CreateHint("Right", hints, ">", TextAlignmentOptions.Right);
+        _scroll.onValueChanged.AddListener(_ => UpdateHints());
+        bar.gameObject.AddComponent<ResizeNotifier>().Resized += UpdateHints;
+        UpdateHints();
+
         GamepadNavigationItem.OnFocusStatic += OnNavItemFocused;
+    }
+
+    private static TextMeshProUGUI CreateHint(
+        string name,
+        RectTransform parent,
+        string glyph,
+        TextAlignmentOptions alignment
+    )
+    {
+        TextMeshProUGUI hint = MenuUi.CreateText(name, parent, 12f, alignment);
+        MenuUi.ApplyLabelText(hint);
+        MenuUi.SetRect(hint.rectTransform, Anchors.Fill, Vector2.zero, Vector2.zero);
+        hint.raycastTarget = false;
+        hint.text = glyph;
+        return hint;
+    }
+
+    private void UpdateHints()
+    {
+        float viewWidth = _scroll.viewport.rect.width;
+        float visibleLeft = -_scroll.content.anchoredPosition.x;
+        float hiddenRight = _scroll.content.rect.width - visibleLeft - viewWidth;
+        // Half-pixel slack so clamped float positions don't leave a hint stuck on.
+        _leftHint.enabled = viewWidth > 0f && visibleLeft > 0.5f;
+        _rightHint.enabled = viewWidth > 0f && hiddenRight > 0.5f;
     }
 
     /// <summary>Colours the selected tab's label and scrolls it into view.</summary>
@@ -117,5 +154,6 @@ internal sealed class MenuTabBar : IDisposable
 
         _scroll.StopMovement();
         strip.anchoredPosition = new Vector2(-visibleLeft, strip.anchoredPosition.y);
+        UpdateHints();
     }
 }

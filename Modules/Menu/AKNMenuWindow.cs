@@ -174,7 +174,14 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new Vector2(SidePadding, TabBarBottom),
             new Vector2(-SidePadding, TabBarBottom + TabBarHeight)
         );
-        _tabBar = new MenuTabBar(bar, Array.ConvertAll(_tabs, tab => tab.Title), SelectTab);
+        RectTransform hints = MenuUi.CreateRect("TabScrollHints", _panelRect);
+        MenuUi.SetRect(
+            hints,
+            Anchors.Bottom,
+            new Vector2(SidePadding, TabBarBottom - 16f),
+            new Vector2(-SidePadding, TabBarBottom - 2f)
+        );
+        _tabBar = new MenuTabBar(bar, hints, Array.ConvertAll(_tabs, tab => tab.Title), SelectTab);
     }
 
     private void SelectTab(int index)
