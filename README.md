@@ -11,7 +11,9 @@ the window scroll vertically. When the mod is installed, the main menu shows
 
 **Player**
 - **Energy regen** — passive energy regeneration while awake (energy per 5s)
-- **No energy drain** — energy never decreases
+- **Infinite energy** — energy never decreases
+- **Infinite health** — you take no HP damage
+- **Infinite stamina** — combat stamina (sword/bow attacks) never drains
 - **Tech points** — view and set your red, green and blue tech points and happiness
 - **Reputation** — pick an NPC and view or set your reputation with them
 

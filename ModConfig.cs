@@ -39,8 +39,12 @@ internal static class ModConfig
     public static ConfigEntry<bool> EnergyRegenEnabled;
     public static ConfigEntry<float> EnergyRegenRate; // energy per 5s, 0.1 .. 10.0
 
-    // --- No energy drain ---
-    public static ConfigEntry<bool> NoEnergyDrainEnabled;
+    // --- Infinite energy ---
+    public static ConfigEntry<bool> InfiniteEnergyEnabled;
+
+    // --- Combat ---
+    public static ConfigEntry<bool> InfiniteHealthEnabled;
+    public static ConfigEntry<bool> InfiniteStaminaEnabled;
 
     // --- Resource drops (loot from destroyed/harvested world objects) ---
     public static ConfigEntry<bool> ResourceDropsEnabled;
@@ -101,8 +105,13 @@ internal static class ModConfig
             new ConfigDescription("Energy regenerated every 5 seconds while not sleeping.",
                 new AcceptableValueRange<float>(0.1f, 10f)));
 
-        NoEnergyDrainEnabled = config.Bind("NoEnergyDrain", "Enabled", false,
+        InfiniteEnergyEnabled = config.Bind("InfiniteEnergy", "Enabled", false,
             "Prevent all energy loss — energy never drains.");
+
+        InfiniteHealthEnabled = config.Bind("InfiniteHealth", "Enabled", false,
+            "The player takes no HP damage.");
+        InfiniteStaminaEnabled = config.Bind("InfiniteStamina", "Enabled", false,
+            "Combat stamina (sword/bow attacks) never drains.");
 
         ResourceDropsEnabled = config.Bind("ResourceDrops", "Enabled", false,
             "Multiply loot dropped when a world object is destroyed/harvested.");

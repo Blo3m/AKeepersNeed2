@@ -51,9 +51,21 @@ internal sealed class PlayerTab : IMenuTab
             v => ModConfig.EnergyRegenRate.Value = v
         );
         _page.ToggleRow(
-            "No Energy Drain",
-            () => ModConfig.NoEnergyDrainEnabled.Value,
-            v => ModConfig.NoEnergyDrainEnabled.Value = v
+            "Infinite Energy",
+            () => ModConfig.InfiniteEnergyEnabled.Value,
+            v => ModConfig.InfiniteEnergyEnabled.Value = v
+        );
+
+        _page.SectionHeader("Combat");
+        _page.ToggleRow(
+            "Infinite Health",
+            () => ModConfig.InfiniteHealthEnabled.Value,
+            v => ModConfig.InfiniteHealthEnabled.Value = v
+        );
+        _page.ToggleRow(
+            "Infinite Stamina",
+            () => ModConfig.InfiniteStaminaEnabled.Value,
+            v => ModConfig.InfiniteStaminaEnabled.Value = v
         );
 
         _page.SectionHeader("Tech Points");

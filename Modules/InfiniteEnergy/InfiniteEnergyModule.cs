@@ -2,7 +2,7 @@ using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
 
-namespace AKeepersNeed2.Modules.NoEnergyDrain;
+namespace AKeepersNeed2.Modules.InfiniteEnergy;
 
 /// <summary>
 /// Stops energy from ever draining. Every energy change funnels through
@@ -11,11 +11,11 @@ namespace AKeepersNeed2.Modules.NoEnergyDrain;
 /// skips the original for negative values blocks all consumption while leaving gains
 /// (sleep restore, passive regen) untouched.
 /// </summary>
-internal sealed class NoEnergyDrainModule : HarmonyModule
+internal sealed class InfiniteEnergyModule : HarmonyModule
 {
-    public override string Name => "NoEnergyDrain";
+    public override string Name => "InfiniteEnergy";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.NoEnergyDrainEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => ModConfig.InfiniteEnergyEnabled;
 
     protected override void Apply(Harmony harmony)
     {
@@ -25,7 +25,7 @@ internal sealed class NoEnergyDrainModule : HarmonyModule
                 nameof(PlayerEnergyGameResSystem.Add),
                 new[] { typeof(float), typeof(bool) }
             ),
-            prefix: new HarmonyMethod(typeof(NoEnergyDrainModule), nameof(BlockEnergyDrain))
+            prefix: new HarmonyMethod(typeof(InfiniteEnergyModule), nameof(BlockEnergyDrain))
         );
     }
 
