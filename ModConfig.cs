@@ -57,6 +57,11 @@ internal static class ModConfig
     // --- Map (display-only; nothing is written to the save) ---
     public static ConfigEntry<bool> RevealMapEnabled;
     public static ConfigEntry<bool> UnlockMilestonesEnabled;
+    public static ConfigEntry<bool> MapNpcsEnabled;
+
+    // --- Map teleport (moves the player; not display-only) ---
+    public static ConfigEntry<bool> MapNpcsTeleportEnabled;
+    public static ConfigEntry<bool> MapTeleportEnabled;
 
     public static void Init(ConfigFile config)
     {
@@ -117,6 +122,14 @@ internal static class ModConfig
 
         UnlockMilestonesEnabled = config.Bind("MapMilestones", "Enabled", false,
             "Draw every map milestone as activated (teleportable). Display-only.");
+
+        MapNpcsEnabled = config.Bind("MapNpcs", "Enabled", false,
+            "Show NPCs that have a portrait on the world map, with their face and name on hover.");
+        MapNpcsTeleportEnabled = config.Bind("MapNpcs", "ShiftClickTeleport", false,
+            "Shift-click an NPC's face on the map to teleport next to them. Needs MapNpcs on.");
+
+        MapTeleportEnabled = config.Bind("MapTeleport", "Enabled", false,
+            "Shift-click the world map to teleport to the nearest walkable spot under the cursor.");
     }
 
     // --- Mapping helpers between a UISlider's 0..100 space and a multiplier ---

@@ -17,6 +17,8 @@ namespace AKeepersNeed2.Modules.Menu;
 /// </summary>
 internal sealed class MenuPage
 {
+    private const float DisabledAlpha = 0.45f;
+
     private readonly RectTransform _content;
     private readonly List<Action> _syncs = new List<Action>();
     private float _cursorTop;
@@ -75,10 +77,27 @@ internal sealed class MenuPage
         AddRule(band, "RuleR", ruleColor);
     }
 
-    /// <summary>A row with the label on the left and an On/Off toggle on the right.</summary>
-    public void ToggleRow(string label, Func<bool> get, Action<bool> set)
+    /// <summary>
+    /// A row with the label on the left and an On/Off toggle on the right. With
+    /// <paramref name="enabledWhen"/>, the row is greyed out and non-interactable while it
+    /// returns false (re-checked on every <see cref="Sync"/>).
+    /// </summary>
+    public void ToggleRow(string label, Func<bool> get, Action<bool> set, Func<bool> enabledWhen = null)
     {
         RectTransform band = NewBand(30f, 8f);
+        if (enabledWhen != null)
+        {
+            var group = band.gameObject.AddComponent<CanvasGroup>();
+            void SyncEnabled()
+            {
+                bool enabled = enabledWhen();
+                group.interactable = enabled;
+                group.blocksRaycasts = enabled;
+                group.alpha = enabled ? 1f : DisabledAlpha;
+            }
+            SyncEnabled();
+            _syncs.Add(SyncEnabled);
+        }
 
         TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f,
             TextAlignmentOptions.Left, Color.white);

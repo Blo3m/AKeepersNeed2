@@ -12,8 +12,6 @@ namespace AKeepersNeed2.Modules.Profiles;
 /// </summary>
 internal sealed class ProfilesModule : IModule, IUpdatable
 {
-    private ProfileToast _toast;
-
     public string Name => "Profiles";
 
     public int Order => -100;
@@ -26,11 +24,6 @@ internal sealed class ProfilesModule : IModule, IUpdatable
     public void Disable()
     {
         ProfileStore.Shutdown();
-        if (_toast != null)
-        {
-            Object.Destroy(_toast.gameObject);
-            _toast = null;
-        }
     }
 
     public void Tick()
@@ -64,21 +57,8 @@ internal sealed class ProfilesModule : IModule, IUpdatable
 
         if (ProfileStore.Active != before)
         {
-            ShowToast($"Profile: {ProfileStore.Active.Name}");
+            Toast.Show($"Profile: {ProfileStore.Active.Name}");
         }
-    }
-
-    private void ShowToast(string message)
-    {
-        if (_toast == null)
-        {
-            _toast = ProfileToast.Create();
-            if (_toast == null)
-            {
-                return;
-            }
-        }
-        _toast.Show(message);
     }
 
     private static bool Pressed(KeyCode key)

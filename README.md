@@ -20,9 +20,15 @@ sideways-scrollable tabs.
 - **Item adder** — search or filter every item by category and add any amount to your
   inventory
 
-**Map** (display-only — nothing is written to your save)
-- **Reveal map** — shows every zone and area name as if fully explored
+**Map**
+- **Reveal map** — shows every zone and area name as if fully explored (display-only)
 - **Unlock milestones** — draws every milestone as activated, so you can teleport to it
+  (display-only)
+- **Show NPCs** — named NPCs appear on the map as their face, moving live while the
+  map is open; hover a face to see their name
+  - **Shift-click NPC to teleport** — shift-click a face to teleport next to that NPC
+- **Shift-click map teleport** — shift-click anywhere on the map to teleport to the nearest
+  walkable spot (outdoors only)
 
 ### Profiles
 
@@ -75,6 +81,9 @@ If your game isn't found automatically, create `GameReferences.props` next to th
     <Reference Include="LazyBearTechnology"><HintPath>$(GameManagedDir)\LazyBearTechnology.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="UnityEngine.UI"><HintPath>$(GameManagedDir)\UnityEngine.UI.dll</HintPath><Private>false</Private></Reference>
     <Reference Include="Unity.TextMeshPro"><HintPath>$(GameManagedDir)\Unity.TextMeshPro.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="AstarPathfindingProject"><HintPath>$(GameManagedDir)\AstarPathfindingProject.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="PackageTools"><HintPath>$(GameManagedDir)\PackageTools.dll</HintPath><Private>false</Private></Reference>
+    <Reference Include="Drawing"><HintPath>$(GameManagedDir)\Drawing.dll</HintPath><Private>false</Private></Reference>
   </ItemGroup>
 </Project>
 ```

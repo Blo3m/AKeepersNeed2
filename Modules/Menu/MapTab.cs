@@ -2,7 +2,7 @@ using UnityEngine;
 
 namespace AKeepersNeed2.Modules.Menu;
 
-/// <summary>World-map display tweaks: zone reveal and milestone unlock.</summary>
+/// <summary>World-map tweaks: zone reveal, milestone unlock, NPC faces and map teleport.</summary>
 internal sealed class MapTab : IMenuTab
 {
     private MenuPage _page;
@@ -22,6 +22,23 @@ internal sealed class MapTab : IMenuTab
             "Unlock Milestones",
             () => ModConfig.UnlockMilestonesEnabled.Value,
             v => ModConfig.UnlockMilestonesEnabled.Value = v);
+        _page.ToggleRow(
+            "Show NPCs",
+            () => ModConfig.MapNpcsEnabled.Value,
+            v =>
+            {
+                ModConfig.MapNpcsEnabled.Value = v;
+                _page.Sync();
+            });
+        _page.ToggleRow(
+            "    Shift-Click NPC to Teleport",
+            () => ModConfig.MapNpcsTeleportEnabled.Value,
+            v => ModConfig.MapNpcsTeleportEnabled.Value = v,
+            () => ModConfig.MapNpcsEnabled.Value);
+        _page.ToggleRow(
+            "Shift-Click Map Teleport",
+            () => ModConfig.MapTeleportEnabled.Value,
+            v => ModConfig.MapTeleportEnabled.Value = v);
     }
 
     public void Refresh()

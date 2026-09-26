@@ -1,25 +1,42 @@
-using AKeepersNeed2.Shared.Ui;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AKeepersNeed2.Modules.Profiles;
+namespace AKeepersNeed2.Shared.Ui;
 
 /// <summary>
 /// A short native-styled notice at the top-centre of the screen that holds, then fades out.
-/// Runs on unscaled time so it still fades while the game is paused.
+/// Runs on unscaled time so it still fades while the game is paused. One shared instance is
+/// created on first use; any module posts to it through <see cref="Show"/>.
 /// </summary>
-internal sealed class ProfileToast : MonoBehaviour
+internal sealed class Toast : MonoBehaviour
 {
     private const float HoldSeconds = 1.5f;
     private const float FadeSeconds = 0.5f;
+
+    private static Toast _instance;
 
     private CanvasGroup _group;
     private RectTransform _panel;
     private TextMeshProUGUI _text;
     private float _shownAt;
 
-    public static ProfileToast Create()
+    public static void Show(string message)
+    {
+        // Unity's null check: the instance dies with the UI root on a scene reload.
+        if (_instance == null)
+        {
+            _instance = Create();
+            if (_instance == null)
+            {
+                Plugin.Logger.LogInfo($"[Toast] {message}");
+                return;
+            }
+        }
+        _instance.Display(message);
+    }
+
+    private static Toast Create()
     {
         NativeUiSkin.TryCapture();
 
@@ -29,7 +46,7 @@ internal sealed class ProfileToast : MonoBehaviour
             return null;
         }
 
-        var root = new GameObject("AKN_ProfileToast", typeof(RectTransform));
+        var root = new GameObject("AKN_Toast", typeof(RectTransform));
         root.transform.SetParent(uiRoot, false);
         MenuUi.Stretch((RectTransform)root.transform);
 
@@ -38,7 +55,7 @@ internal sealed class ProfileToast : MonoBehaviour
         canvas.overrideSorting = true;
         canvas.sortingOrder = 460;
 
-        var toast = root.AddComponent<ProfileToast>();
+        var toast = root.AddComponent<Toast>();
         toast.Build();
         root.SetActive(false);
         return toast;
@@ -72,7 +89,7 @@ internal sealed class ProfileToast : MonoBehaviour
         _text.overflowMode = TextOverflowModes.Ellipsis;
     }
 
-    public void Show(string message)
+    private void Display(string message)
     {
         float scale = Mathf.Clamp(ModConfig.UiScale.Value, 0.5f, 3f);
         _panel.localScale = new Vector3(scale, scale, 1f);
