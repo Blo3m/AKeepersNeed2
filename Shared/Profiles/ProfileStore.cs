@@ -61,9 +61,7 @@ internal static class ProfileStore
         {
             defaultProfile = Load(PathFor(DefaultName));
             _profiles.Add(defaultProfile);
-            MigrateFromMain(defaultProfile);
         }
-        RemoveMainOrphans();
         Sort();
 
         _active = Find(ModConfig.ActiveProfile.Value) ?? defaultProfile;
@@ -304,61 +302,6 @@ internal static class ProfileStore
             "Key that switches straight to this profile (None = unbound).");
         file.Save();
         return new Profile(Path.GetFileNameWithoutExtension(path), file, hotkey);
-    }
-
-    /// <summary>
-    /// First run: gameplay values used to live in the main .cfg. After the move to profiles
-    /// they're unbound there (BepInEx keeps them as orphans), so seed Default from them.
-    /// </summary>
-    private static void MigrateFromMain(Profile target)
-    {
-        Dictionary<ConfigDefinition, string> orphans = MainOrphans();
-        if (orphans == null)
-        {
-            return;
-        }
-        int migrated = 0;
-        foreach (ConfigEntryBase live in LiveEntries())
-        {
-            if (orphans.TryGetValue(live.Definition, out string value))
-            {
-                target.File[live.Definition].SetSerializedValue(value);
-                migrated++;
-            }
-        }
-        target.File.Save();
-        if (migrated > 0)
-        {
-            Plugin.Logger.LogInfo($"[Profiles] migrated {migrated} setting(s) from the main config into {target.Name}.");
-        }
-    }
-
-    private static void RemoveMainOrphans()
-    {
-        Dictionary<ConfigDefinition, string> orphans = MainOrphans();
-        if (orphans == null)
-        {
-            return;
-        }
-        bool removed = false;
-        foreach (ConfigDefinition definition in ModConfig.ProfileSettings.Keys)
-        {
-            removed |= orphans.Remove(definition);
-        }
-        if (removed)
-        {
-            ModConfig.Main.Save();
-        }
-    }
-
-    // BepInEx keeps unbound entries in a private dictionary so they survive saves.
-    private static Dictionary<ConfigDefinition, string> MainOrphans()
-    {
-        PropertyInfo property = typeof(ConfigFile).GetProperty(
-            "OrphanedEntries",
-            BindingFlags.Instance | BindingFlags.NonPublic
-        );
-        return property?.GetValue(ModConfig.Main, null) as Dictionary<ConfigDefinition, string>;
     }
 
     private static IEnumerable<ConfigEntryBase> LiveEntries()

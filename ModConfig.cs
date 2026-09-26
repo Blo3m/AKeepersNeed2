@@ -17,9 +17,6 @@ internal static class ModConfig
     public static readonly string ProfilesDirectory =
         Path.Combine(Path.Combine(Paths.ConfigPath, "AKeepersNeed2"), "profiles");
 
-    /// <summary>The plugin's main .cfg (global settings only).</summary>
-    public static ConfigFile Main;
-
     /// <summary>
     /// Live gameplay settings. Never saved to disk itself — it only mirrors the active
     /// profile, so every gameplay entry must be bound here.
@@ -74,8 +71,6 @@ internal static class ModConfig
 
     public static void Init(ConfigFile config)
     {
-        Main = config;
-
         MenuHotkey = config.Bind("Menu", "Hotkey", KeyCode.F1,
             "Key that toggles the mod menu.");
         UiScale = config.Bind("Menu", "UiScale", 1f,
