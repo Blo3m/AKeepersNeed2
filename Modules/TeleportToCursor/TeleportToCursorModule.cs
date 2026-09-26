@@ -1,8 +1,9 @@
 using AKeepersNeed2.Core;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Movement;
 using AKeepersNeed2.Shared.Ui;
+using BepInEx.Configuration;
 using UnityEngine;
-using UnityEngine.EventSystems;
 
 namespace AKeepersNeed2.Modules.TeleportToCursor;
 
@@ -12,15 +13,36 @@ namespace AKeepersNeed2.Modules.TeleportToCursor;
 /// height, the same way the game's own mouse aiming does (<c>MouseAimHelper</c>). Polls input
 /// in <see cref="Tick"/>; no Harmony patch is needed.
 /// </summary>
-internal sealed class TeleportToCursorModule : IModule, IUpdatable
+internal sealed class TeleportToCursorModule : IModule, IUpdatable, ISettingsDeclarer
 {
     // Guards against snapping to a node in some other area when the cursor is over a spot
     // with no walkable graph (e.g. a wall or off the edge of an interior).
     private const float MaxSnapDistance = 3f;
 
+    private ConfigEntry<bool> _enabled;
+    private ConfigEntry<KeyCode> _key;
+
     public string Name => "TeleportToCursor";
 
     public int Order => 0;
+
+    public void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "TeleportToCursor",
+            "Enabled",
+            false,
+            "Press the teleport key to teleport to the nearest walkable spot under the cursor."
+        );
+        _key = settings.Profile(
+            "TeleportToCursor",
+            "Key",
+            KeyCode.Mouse2,
+            "Key that teleports the player to the cursor (None = unbound)."
+        );
+        settings.Toggle(MenuSection.Movement, 10, "Teleport to Cursor", _enabled);
+        settings.Key(MenuSection.Movement, 20, "Teleport Key", _key);
+    }
 
     public void Enable()
     {
@@ -32,8 +54,8 @@ internal sealed class TeleportToCursorModule : IModule, IUpdatable
 
     public void Tick()
     {
-        KeyCode key = ModConfig.TeleportToCursorKey.Value;
-        if (!ModConfig.TeleportToCursorEnabled.Value || key == KeyCode.None || !Input.GetKeyDown(key))
+        KeyCode key = _key.Value;
+        if (!_enabled.Value || key == KeyCode.None || !Input.GetKeyDown(key))
         {
             return;
         }
@@ -41,7 +63,7 @@ internal sealed class TeleportToCursorModule : IModule, IUpdatable
         {
             return;
         }
-        if (EventSystem.current != null && EventSystem.current.IsPointerOverGameObject())
+        if (InputGate.IsPointerOverUi)
         {
             Plugin.Logger.LogInfo("[TeleportToCursor] ignored: cursor over UI.");
             return;

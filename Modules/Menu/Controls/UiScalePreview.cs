@@ -9,7 +9,7 @@ namespace AKeepersNeed2.Modules.Menu.Controls;
 /// <summary>
 /// The UI-scale control on the Settings tab. Dragging the slider shows a translucent ghost of
 /// the menu panel at the new scale; releasing it opens a non-modal Apply/Cancel dialog. Only
-/// Apply writes <see cref="ModConfig.UiScale"/> and rescales the real panel.
+/// Apply writes <see cref="MenuModule.UiScale"/> and rescales the real panel.
 /// </summary>
 internal sealed class UiScalePreview
 {
@@ -50,7 +50,7 @@ internal sealed class UiScalePreview
             MinScale,
             MaxScale,
             Format,
-            () => ModConfig.UiScale.Value,
+            () => MenuModule.UiScale.Value,
             OnChanged,
             out _sync
         );
@@ -60,7 +60,7 @@ internal sealed class UiScalePreview
     /// <summary>Scales the panel to the saved config value.</summary>
     public void ApplySaved()
     {
-        float scale = Mathf.Clamp(ModConfig.UiScale.Value, MinScale, MaxScale);
+        float scale = Mathf.Clamp(MenuModule.UiScale.Value, MinScale, MaxScale);
         _panel.localScale = new Vector3(scale, scale, 1f);
     }
 
@@ -147,7 +147,7 @@ internal sealed class UiScalePreview
 
     private void Apply()
     {
-        ModConfig.UiScale.Value = _slider.value;
+        MenuModule.UiScale.Value = _slider.value;
         ApplySaved();
         Exit();
     }

@@ -15,6 +15,11 @@ internal static class InputGate
 
     public static bool IsBlocked => KeyCaptureActive || IsTextInputFocused();
 
+    public static bool ShiftHeld => Input.GetKey(KeyCode.LeftShift) || Input.GetKey(KeyCode.RightShift);
+
+    /// <summary>True when the cursor is over any raycast-blocking UI (game or mod).</summary>
+    public static bool IsPointerOverUi => EventSystem.current != null && EventSystem.current.IsPointerOverGameObject();
+
     public static bool IsTextInputFocused()
     {
         GameObject selected = EventSystem.current != null

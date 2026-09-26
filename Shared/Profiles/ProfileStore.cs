@@ -36,6 +36,7 @@ internal static class ProfileStore
 
     private static readonly List<Profile> _profiles = new List<Profile>();
     private static Profile _active;
+    private static ConfigEntry<string> _activeProfileName;
     private static bool _applying;
     private static float _saveAt = -1f;
 
@@ -47,8 +48,10 @@ internal static class ProfileStore
 
     public static Profile Active => _active;
 
-    public static void Init()
+    /// <param name="activeProfile">The global entry remembering the active profile's name.</param>
+    public static void Init(ConfigEntry<string> activeProfile)
     {
+        _activeProfileName = activeProfile;
         Directory.CreateDirectory(ModConfig.ProfilesDirectory);
 
         foreach (string path in Directory.GetFiles(ModConfig.ProfilesDirectory, "*.cfg"))
@@ -64,8 +67,8 @@ internal static class ProfileStore
         }
         Sort();
 
-        _active = Find(ModConfig.ActiveProfile.Value) ?? defaultProfile;
-        ModConfig.ActiveProfile.Value = _active.Name;
+        _active = Find(_activeProfileName.Value) ?? defaultProfile;
+        _activeProfileName.Value = _active.Name;
         ApplyToLive();
 
         ModConfig.ProfileSettings.SettingChanged += OnLiveSettingChanged;
@@ -102,7 +105,7 @@ internal static class ProfileStore
         }
         Flush();
         _active = profile;
-        ModConfig.ActiveProfile.Value = profile.Name;
+        _activeProfileName.Value = profile.Name;
         ApplyToLive();
         Plugin.Logger.LogInfo($"[Profiles] switched to {profile.Name}.");
         Changed?.Invoke();
@@ -214,7 +217,7 @@ internal static class ProfileStore
         if (profile == _active)
         {
             _active = renamed;
-            ModConfig.ActiveProfile.Value = renamed.Name;
+            _activeProfileName.Value = renamed.Name;
         }
         Changed?.Invoke();
         return null;

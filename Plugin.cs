@@ -14,8 +14,7 @@ public class Plugin : BaseUnityPlugin
         Logger = base.Logger;
         ModConfig.Init(Config);
         ModuleRegistry.EnableAll();
-        Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded! Press "
-                       + $"{ModConfig.MenuHotkey.Value} in-game to open the mod menu.");
+        Logger.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
     }
 
     private void Update()

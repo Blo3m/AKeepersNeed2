@@ -1,6 +1,8 @@
 using AKeepersNeed2.Core;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Profiles;
 using AKeepersNeed2.Shared.Ui;
+using BepInEx.Configuration;
 using UnityEngine;
 
 namespace AKeepersNeed2.Modules.Profiles;
@@ -10,15 +12,38 @@ namespace AKeepersNeed2.Modules.Profiles;
 /// active profile's values), drives the store's debounced saving, and polls the
 /// previous/next and per-profile switch hotkeys, confirming hotkey switches with a toast.
 /// </summary>
-internal sealed class ProfilesModule : IModule, IUpdatable
+internal sealed class ProfilesModule : IModule, IUpdatable, ISettingsDeclarer
 {
+    private ConfigEntry<string> _activeProfile;
+    private ConfigEntry<KeyCode> _previousKey;
+    private ConfigEntry<KeyCode> _nextKey;
+
     public string Name => "Profiles";
 
     public int Order => -100;
 
+    public void DeclareSettings(SettingsBuilder settings)
+    {
+        _activeProfile = settings.Global(
+            "Profiles",
+            "Active",
+            ProfileStore.DefaultName,
+            "Name of the active settings profile (a file in config/AKeepersNeed2/profiles)."
+        );
+        _previousKey = settings.Global(
+            "Profiles",
+            "PreviousKey",
+            KeyCode.F2,
+            "Key that switches to the previous profile."
+        );
+        _nextKey = settings.Global("Profiles", "NextKey", KeyCode.F3, "Key that switches to the next profile.");
+        settings.Key(MenuSection.Controls, 20, "Previous Profile", _previousKey);
+        settings.Key(MenuSection.Controls, 30, "Next Profile", _nextKey);
+    }
+
     public void Enable()
     {
-        ProfileStore.Init();
+        ProfileStore.Init(_activeProfile);
     }
 
     public void Disable()
@@ -35,11 +60,11 @@ internal sealed class ProfilesModule : IModule, IUpdatable
         }
 
         Profile before = ProfileStore.Active;
-        if (Pressed(ModConfig.PreviousProfileKey.Value))
+        if (Pressed(_previousKey.Value))
         {
             ProfileStore.SwitchRelative(-1);
         }
-        else if (Pressed(ModConfig.NextProfileKey.Value))
+        else if (Pressed(_nextKey.Value))
         {
             ProfileStore.SwitchRelative(1);
         }

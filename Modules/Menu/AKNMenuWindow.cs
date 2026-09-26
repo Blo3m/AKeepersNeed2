@@ -1,4 +1,5 @@
 using System;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
 using AKeepersNeed2.Modules.Menu.Keybinds;
 using AKeepersNeed2.Modules.Menu.Tabs;
@@ -83,10 +84,10 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         {
             new SettingsTab(this),
             new PlayerTab(this),
-            new DropsTab(),
-            new CraftingTab(),
+            new ConfigTab(MenuTab.Drops, _rebinder),
+            new ConfigTab(MenuTab.Crafting, _rebinder),
             new ItemsTab(),
-            new MapTab(),
+            new ConfigTab(MenuTab.Map, _rebinder),
         };
 
         MenuUi.Stretch((RectTransform)transform);

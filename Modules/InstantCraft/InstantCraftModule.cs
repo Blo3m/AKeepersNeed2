@@ -1,3 +1,4 @@
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -13,12 +14,25 @@ namespace AKeepersNeed2.Modules.InstantCraft;
 /// </summary>
 internal sealed class InstantCraftModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     private static readonly AccessTools.FieldRef<CraftElementBase, int> TotalProgressTicks =
         AccessTools.FieldRefAccess<CraftElementBase, int>("totalProgressTicks");
 
     public override string Name => "InstantCraft";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.InstantCraftEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "InstantCraft",
+            "Enabled",
+            false,
+            "Crafts finish immediately. Garden growing, star and autopsy crafts keep their normal time."
+        );
+        settings.Toggle(MenuSection.Crafting, 20, "Instant Crafting", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using GK2.FlowCanvasNodes;
@@ -16,9 +17,22 @@ namespace AKeepersNeed2.Modules.FreeBuilding;
 /// </summary>
 internal sealed class FreeBuildingModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     public override string Name => "FreeBuilding";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.FreeBuildingEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "FreeBuilding",
+            "Enabled",
+            false,
+            "Build without the required items; nothing is consumed (includes town buildings)."
+        );
+        settings.Toggle(MenuSection.Building, 10, "Free Building", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {

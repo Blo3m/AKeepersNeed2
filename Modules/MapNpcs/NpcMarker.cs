@@ -1,4 +1,5 @@
 using AKeepersNeed2.Shared.Map;
+using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
 using UnityEngine;
 using UnityEngine.EventSystems;
@@ -16,7 +17,7 @@ internal sealed class NpcMarker :
 {
     public WgoData Wgo { get; private set; }
 
-    public bool HandlesShiftClick => ModConfig.MapNpcsTeleportEnabled.Value;
+    public bool HandlesShiftClick => MapNpcsModule.TeleportEnabled;
 
     public string DisplayName { get; private set; }
 
@@ -64,11 +65,11 @@ internal sealed class NpcMarker :
         {
             return;
         }
-        if (!ModConfig.MapNpcsTeleportEnabled.Value)
+        if (!MapNpcsModule.TeleportEnabled)
         {
             return;
         }
-        if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+        if (!InputGate.ShiftHeld)
         {
             return;
         }

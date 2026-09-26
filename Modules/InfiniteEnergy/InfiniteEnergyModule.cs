@@ -1,3 +1,4 @@
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -13,9 +14,22 @@ namespace AKeepersNeed2.Modules.InfiniteEnergy;
 /// </summary>
 internal sealed class InfiniteEnergyModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     public override string Name => "InfiniteEnergy";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.InfiniteEnergyEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "InfiniteEnergy",
+            "Enabled",
+            false,
+            "Prevent all energy loss — energy never drains."
+        );
+        settings.Toggle(MenuSection.Energy, 30, "Infinite Energy", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {

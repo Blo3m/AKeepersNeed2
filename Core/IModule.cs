@@ -4,10 +4,10 @@ namespace AKeepersNeed2.Core;
 /// A self-contained feature of the mod, discovered and enabled at startup by
 /// <see cref="ModuleRegistry"/>. Each module owns exactly one concern.
 ///
-/// Convention for gameplay (Harmony) modules: apply the patch in <see cref="Enable"/>
-/// only when the module's <c>ModConfig</c> flag is on, and remove it in
-/// <see cref="Disable"/> — patch application is tied to the config flag rather than
-/// left always-on. React to runtime toggles via the config entry's change event.
+/// A module that owns config also implements <see cref="Settings.ISettingsDeclarer"/>; its
+/// settings are declared before any module is enabled. Gameplay (Harmony) modules extend
+/// <c>Shared.Patching.HarmonyModule</c>, which applies the patch only while the module's
+/// enabled flag is on and reacts to runtime toggles.
 /// </summary>
 internal interface IModule
 {

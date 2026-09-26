@@ -15,6 +15,8 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Infinite energy** — energy never decreases
 - **Infinite health** — you take no HP damage
 - **Infinite stamina** — combat stamina (sword/bow attacks) never drains
+- **Ignore gathering mastery** — chop, mine and dig objects above your mastery level, as if
+  you just met the requirement
 - **Teleport to cursor** — press a key (default middle mouse, rebindable) to teleport to the
   nearest walkable spot under the cursor, outdoors or indoors
 - **Tech points** — view and set your red, green and blue tech points and happiness
@@ -30,6 +32,9 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
   alchemy and tool durability)
 - **Instant crafting** — crafts finish immediately (garden growing, star and autopsy crafts
   keep their normal time)
+- **Ignore crafting mastery** — run crafts above your mastery level, including star crafts and
+  autopsies, as if you just met the requirement
+- **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 - **Free building** — build without the required items; nothing is consumed (includes
   town buildings)
 

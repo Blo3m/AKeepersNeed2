@@ -1,3 +1,4 @@
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -13,9 +14,22 @@ namespace AKeepersNeed2.Modules.InfiniteHealth;
 /// </summary>
 internal sealed class InfiniteHealthModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     public override string Name => "InfiniteHealth";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.InfiniteHealthEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "InfiniteHealth",
+            "Enabled",
+            false,
+            "The player takes no HP damage."
+        );
+        settings.Toggle(MenuSection.Combat, 10, "Infinite Health", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {

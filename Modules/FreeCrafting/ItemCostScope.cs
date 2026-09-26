@@ -1,6 +1,6 @@
-using System;
 using System.Collections.Generic;
 using System.Reflection;
+using AKeepersNeed2.Shared.Patching;
 using HarmonyLib;
 
 namespace AKeepersNeed2.Modules.FreeCrafting;
@@ -16,23 +16,14 @@ internal static class ItemCostScope
     // Headroom so a caller that adds to a faked count can't overflow.
     private const int FakeTotalCount = int.MaxValue / 2;
 
-    [ThreadStatic]
-    private static int _depth;
+    private static readonly PatchScope Scope = new PatchScope("FreeCrafting");
 
-    private static bool Active => _depth > 0;
+    private static bool Active => Scope.Active;
 
+    /// <summary>Makes the inventory fakes active while <paramref name="method"/> runs.</summary>
     public static void Wrap(Harmony harmony, MethodBase method)
     {
-        if (method == null)
-        {
-            Plugin.Logger.LogWarning("[FreeCrafting] scope target not found; a game update may have renamed it.");
-            return;
-        }
-        harmony.Patch(
-            method,
-            prefix: new HarmonyMethod(typeof(ItemCostScope), nameof(Enter)),
-            finalizer: new HarmonyMethod(typeof(ItemCostScope), nameof(Exit))
-        );
+        Scope.Wrap(harmony, method);
     }
 
     public static void PatchInventoryChecks(Harmony harmony)
@@ -90,21 +81,6 @@ internal static class ItemCostScope
     private static void PassCheck(Harmony harmony, MethodBase method)
     {
         harmony.Patch(method, prefix: new HarmonyMethod(typeof(ItemCostScope), nameof(ForceTrue)));
-    }
-
-    // __state keeps Enter/Exit balanced even if another mod's prefix interferes.
-    private static void Enter(out bool __state)
-    {
-        _depth++;
-        __state = true;
-    }
-
-    private static void Exit(bool __state)
-    {
-        if (__state)
-        {
-            _depth--;
-        }
     }
 
     private static bool ForceTrue(ref bool __result)

@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Text.RegularExpressions;
+using AKeepersNeed2.Core.Settings;
+using AKeepersNeed2.Shared.GameInput;
 using AKeepersNeed2.Shared.Profiles;
 using BepInEx.Configuration;
-using LazyBearTechnology;
 using UnityEngine;
 
 namespace AKeepersNeed2.Modules.Menu.Keybinds;
@@ -13,7 +13,7 @@ internal sealed class KeyConflict
 {
     public string Name;
 
-    /// <summary>False for the menu key and for every game action (the mod never unbinds those).</summary>
+    /// <summary>False for unbindable keys (the menu key) and every game action (never unbound).</summary>
     public bool Replaceable;
 
     /// <summary>Unbinds the key from this binding; null when not <see cref="Replaceable"/>.</summary>
@@ -21,10 +21,11 @@ internal sealed class KeyConflict
 }
 
 /// <summary>
-/// Finds what else uses a key, within the active profile: the menu, previous/next and every
-/// profile's switch key (all global), the active profile's teleport key, and the game's own
-/// keyboard bindings (<c>LazyInput.GameBindings.keyBindings</c>). Game actions are only
-/// reported, never unbound; players change those in the game's Controls menu.
+/// Finds what else uses a key, within the active profile: every hotkey a module declared
+/// (<see cref="SettingsRegistry.Hotkeys"/>: menu, previous/next profile, the active profile's
+/// teleport key …), every profile's switch key (they work from any profile), and the game's own
+/// keyboard bindings (<see cref="GameKeybinds"/>). Game actions are only reported, never unbound;
+/// players change those in the game's Controls menu.
 /// </summary>
 internal static class KeyConflicts
 {
@@ -35,83 +36,41 @@ internal static class KeyConflicts
         {
             return conflicts;
         }
-        AddModConflicts(conflicts, key, self);
-        AddGameConflicts(conflicts, key);
-        return conflicts;
-    }
 
-    private static void AddModConflicts(List<KeyConflict> conflicts, KeyCode key, ConfigEntry<KeyCode> self)
-    {
-        void Check(string name, ConfigEntry<KeyCode> entry, bool replaceable, Action unbind)
+        foreach (KeySettingRow hotkey in SettingsRegistry.Hotkeys)
         {
-            if (entry == null || entry == self || entry.Value != key)
+            ConfigEntry<KeyCode> entry = hotkey.Entry;
+            if (entry == self || entry.Value != key)
             {
-                return;
+                continue;
             }
-            conflicts.Add(new KeyConflict { Name = name, Replaceable = replaceable, Unbind = unbind });
+            conflicts.Add(new KeyConflict
+            {
+                Name = hotkey.Label,
+                Replaceable = !hotkey.IsUnbindable,
+                Unbind = () => entry.Value = KeyCode.None,
+            });
         }
 
-        Check("Menu Key", ModConfig.MenuHotkey, false, null);
-        Check(
-            "Previous Profile",
-            ModConfig.PreviousProfileKey,
-            true,
-            () => ModConfig.PreviousProfileKey.Value = KeyCode.None
-        );
-        Check("Next Profile", ModConfig.NextProfileKey, true, () => ModConfig.NextProfileKey.Value = KeyCode.None);
         foreach (Profile profile in ProfileStore.Profiles)
         {
+            if (profile.Hotkey == self || profile.Hotkey.Value != key)
+            {
+                continue;
+            }
             Profile target = profile;
-            Check($"{profile.Name} profile key", profile.Hotkey, true, () => target.SetHotkey(KeyCode.None));
-        }
-        Check(
-            "Teleport Key",
-            ModConfig.TeleportToCursorKey,
-            true,
-            () => ModConfig.TeleportToCursorKey.Value = KeyCode.None
-        );
-    }
-
-    private static void AddGameConflicts(List<KeyConflict> conflicts, KeyCode key)
-    {
-        List<KeyBinding> bindings = LazyInput.GameBindings?.keyBindings;
-        if (bindings == null)
-        {
-            return;
-        }
-        foreach (KeyBinding binding in bindings)
-        {
-            // Modifier combos (e.g. Ctrl+key) don't fire on the plain key.
-            if (binding.keyCode != key || binding.additionalKeyCodes.Length > 0)
+            conflicts.Add(new KeyConflict
             {
-                continue;
-            }
-            // The game mirrors Interaction's key onto SpeechSkip2; listing both would just repeat it.
-            if (binding.gameKey.value == GameKey.SpeechSkip2.value)
-            {
-                continue;
-            }
-            conflicts.Add(new KeyConflict { Name = $"{GameActionName(binding)} (game)", Replaceable = false });
+                Name = $"{profile.Name} profile key",
+                Replaceable = true,
+                Unbind = () => target.SetHotkey(KeyCode.None),
+            });
         }
-    }
 
-    /// <summary>
-    /// The localized action name the game's Controls window shows. Keys that aren't listed
-    /// there often have no locale entry, so fall back to the <c>GameKey</c> field name
-    /// ("OpenMap" → "Open Map").
-    /// </summary>
-    private static string GameActionName(KeyBinding binding)
-    {
-        string localized = string.IsNullOrEmpty(binding.localeId)
-            ? null
-            : LLBase.L(binding.localeId);
-        if (!string.IsNullOrWhiteSpace(localized))
+        foreach (string action in GameKeybinds.ActionsOn(key))
         {
-            return localized;
+            conflicts.Add(new KeyConflict { Name = $"{action} (game)", Replaceable = false });
         }
-        string field = Enumeration.GetNameOfStaticField<GameKey>(binding.gameKey.value);
-        return string.IsNullOrEmpty(field)
-            ? $"action {binding.gameKey.value}"
-            : Regex.Replace(field, "(?<=[a-z0-9])(?=[A-Z])", " ");
+        return conflicts;
     }
 }

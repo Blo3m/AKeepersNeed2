@@ -11,12 +11,12 @@ namespace AKeepersNeed2.Modules.Menu.Keybinds;
 
 /// <summary>
 /// "Label [Key]" rows that capture the next keypress to rebind a hotkey. Esc, Backspace and
-/// Delete unbind (the menu key cancels instead). Middle/extra mouse buttons can be bound;
+/// Delete unbind (unbindable rows, like the menu key, cancel instead). Middle/extra mouse buttons can be bound;
 /// left/right click can't.
 /// A key is bound to one thing at a time (see <see cref="KeyConflicts"/>): if it's already used
 /// by another mod hotkey, a Replace/Cancel dialog names it and Replace unbinds it there. If the
-/// menu key or a game action uses it, an OK message names it and nothing changes; the menu key
-/// can't be unbound, so the menu can't be locked out.
+/// key is unbindable (the menu key) or a game action uses it, an OK message names it and nothing
+/// changes. Unbindable keys can't be unbound either, so e.g. the menu can't be locked out.
 /// </summary>
 internal sealed class KeyRebinder
 {
@@ -37,7 +37,7 @@ internal sealed class KeyRebinder
         public TextMeshProUGUI Label;
         public Func<ConfigEntry<KeyCode>> Entry;
         public Action<KeyCode> Set;
-        public bool IsMenuKey;
+        public bool IsUnbindable;
 
         public KeyCode Get()
         {
@@ -63,7 +63,7 @@ internal sealed class KeyRebinder
         string label,
         Func<ConfigEntry<KeyCode>> entry,
         Action<KeyCode> set = null,
-        bool isMenuKey = false
+        bool isUnbindable = false
     )
     {
         TextMeshProUGUI name = MenuUi.CreateText("Label", band, 13f, TextAlignmentOptions.Left);
@@ -91,7 +91,7 @@ internal sealed class KeyRebinder
                     target.Value = key;
                 }
             }),
-            IsMenuKey = isMenuKey,
+            IsUnbindable = isUnbindable,
         };
         if (row.Label != null)
         {
@@ -145,7 +145,7 @@ internal sealed class KeyRebinder
 
     /// <summary>
     /// The window's Back (Esc / gamepad B) handler asks this first. During a capture Back
-    /// unbinds the key (cancels for the menu key). It also claims the Back press when
+    /// unbinds the key (cancels for unbindable rows). It also claims the Back press when
     /// <see cref="Tick"/> already handled Esc earlier this frame (the two run in no fixed
     /// order), so the menu stays open.
     /// </summary>
@@ -159,10 +159,10 @@ internal sealed class KeyRebinder
         return _escHandledFrame == Time.frameCount;
     }
 
-    // The menu key can't be unbound, so the menu can't be locked out.
+    // Unbindable rows (e.g. the menu key) cancel instead, so they can never end up unbound.
     private void UnbindOrCancel()
     {
-        if (_listening.IsMenuKey)
+        if (_listening.IsUnbindable)
         {
             Cancel();
         }
@@ -223,7 +223,7 @@ internal sealed class KeyRebinder
         }
 
         string names = Names(conflicts);
-        // The menu key and game actions can't be taken, so there's nothing to replace: just say so.
+        // Unbindable rows (the menu key) and game actions can't be taken, so there's nothing to replace: just say so.
         if (conflicts.Any(c => !c.Replaceable))
         {
             _window.Dialogs.ShowMessage("Key in use", $"{KeyName(key)} is used by {names}.", 150f);

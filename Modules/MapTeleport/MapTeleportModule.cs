@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using AKeepersNeed2.Core;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Map;
 using AKeepersNeed2.Shared.Ui;
+using BepInEx.Configuration;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -11,13 +13,26 @@ namespace AKeepersNeed2.Modules.MapTeleport;
 /// Shift-click on the open world map teleports the player to the nearest walkable spot under
 /// the cursor. Polls input in <see cref="Tick"/>; no Harmony patch is needed.
 /// </summary>
-internal sealed class MapTeleportModule : IModule, IUpdatable
+internal sealed class MapTeleportModule : IModule, IUpdatable, ISettingsDeclarer
 {
+    private ConfigEntry<bool> _enabled;
+
     private readonly List<RaycastResult> _hits = new List<RaycastResult>();
 
     public string Name => "MapTeleport";
 
     public int Order => 0;
+
+    public void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "MapTeleport",
+            "Enabled",
+            false,
+            "Shift-click the world map to teleport to the nearest walkable spot under the cursor."
+        );
+        settings.Toggle(MenuSection.Map, 50, "Shift-Click Map Teleport", _enabled);
+    }
 
     public void Enable()
     {
@@ -29,11 +44,11 @@ internal sealed class MapTeleportModule : IModule, IUpdatable
 
     public void Tick()
     {
-        if (!ModConfig.MapTeleportEnabled.Value || !Input.GetMouseButtonDown(0))
+        if (!_enabled.Value || !Input.GetMouseButtonDown(0))
         {
             return;
         }
-        if (!Input.GetKey(KeyCode.LeftShift) && !Input.GetKey(KeyCode.RightShift))
+        if (!InputGate.ShiftHeld)
         {
             return;
         }

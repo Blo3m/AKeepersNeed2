@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -15,6 +16,8 @@ namespace AKeepersNeed2.Modules.MapReveal;
 /// </summary>
 internal sealed class MapRevealModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     private static readonly AccessTools.FieldRef<MapPageWidget, Dictionary<string, UIMapZone>> ZonesRef =
         AccessTools.FieldRefAccess<MapPageWidget, Dictionary<string, UIMapZone>>("zones");
 
@@ -23,7 +26,18 @@ internal sealed class MapRevealModule : HarmonyModule
 
     public override string Name => "MapReveal";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.RevealMapEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "MapReveal",
+            "Enabled",
+            false,
+            "Show every map zone and area label as if explored. Display-only."
+        );
+        settings.Toggle(MenuSection.Map, 10, "Reveal Map", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {

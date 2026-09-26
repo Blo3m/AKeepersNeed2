@@ -1,3 +1,4 @@
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -14,9 +15,22 @@ namespace AKeepersNeed2.Modules.FreeCrafting;
 /// </summary>
 internal sealed class FreeCraftingModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     public override string Name => "FreeCrafting";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.FreeCraftingEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "FreeCrafting",
+            "Enabled",
+            false,
+            "Craft without the required items; nothing is consumed (includes alchemy and tool durability)."
+        );
+        settings.Toggle(MenuSection.Crafting, 10, "Free Crafting", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {

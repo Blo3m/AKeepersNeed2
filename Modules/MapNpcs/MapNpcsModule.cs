@@ -1,3 +1,4 @@
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Map;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
@@ -14,9 +15,36 @@ namespace AKeepersNeed2.Modules.MapNpcs;
 /// </summary>
 internal sealed class MapNpcsModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+    private static ConfigEntry<bool> _teleport;
+
     public override string Name => "MapNpcs";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.MapNpcsEnabled;
+    /// <summary>Show NPCs on the map (the patch flag).</summary>
+    internal static bool ShowEnabled => _enabled.Value;
+
+    /// <summary>Shift-click a face to teleport; only offered while <see cref="ShowEnabled"/>.</summary>
+    internal static bool TeleportEnabled => _teleport.Value;
+
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "MapNpcs",
+            "Enabled",
+            false,
+            "Show NPCs that have a portrait on the world map, with their face and name on hover."
+        );
+        _teleport = settings.Profile(
+            "MapNpcs",
+            "ShiftClickTeleport",
+            false,
+            "Shift-click an NPC's face on the map to teleport next to them. Needs MapNpcs on."
+        );
+        settings.Toggle(MenuSection.Map, 30, "Show NPCs", _enabled);
+        settings.Toggle(MenuSection.Map, 40, "    Shift-Click NPC to Teleport", _teleport, () => _enabled.Value);
+    }
 
     protected override void Apply(Harmony harmony)
     {

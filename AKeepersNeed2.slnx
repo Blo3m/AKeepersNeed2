@@ -1,3 +1,4 @@
 <Solution>
   <Project Path="AKeepersNeed2.csproj" />
+  <Project Path="Analyzers/AKeepersNeed2.Analyzers.csproj" />
 </Solution>

@@ -18,6 +18,9 @@ internal sealed class Toast : MonoBehaviour
 
     private static Toast _instance;
 
+    /// <summary>Size multiplier, kept equal to the menu's UI scale by the Menu module.</summary>
+    public static float Scale { get; set; } = 1f;
+
     private CanvasGroup _group;
     private RectTransform _panel;
     private TextMeshProUGUI _text;
@@ -103,7 +106,7 @@ internal sealed class Toast : MonoBehaviour
     private void Display(string message, string key)
     {
         _key = key;
-        float scale = Mathf.Clamp(ModConfig.UiScale.Value, 0.5f, 3f);
+        float scale = Mathf.Clamp(Scale, 0.5f, 3f);
         _panel.localScale = new Vector3(scale, scale, 1f);
         _text.text = message;
         _shownAt = Time.unscaledTime;

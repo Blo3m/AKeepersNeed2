@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
 using AKeepersNeed2.Modules.Menu.Keybinds;
 using AKeepersNeed2.Shared.Profiles;
@@ -36,28 +39,23 @@ internal sealed class SettingsTab : IMenuTab
         _page = new MenuPage(content);
         KeyRebinder rebinder = _window.Rebinder;
 
-        _page.SectionHeader("Profile");
-        BuildProfileSelector(_page.Band(32f, 4f));
-        BuildProfileActions(_page.Band(28f, 6f));
-        _page.AddSync(rebinder.BuildRow(
-            _page.Band(30f, 6f),
-            "Profile Key",
-            () => ProfileStore.Active?.Hotkey,
-            key => ProfileStore.Active?.SetHotkey(key)
-        ));
-
-        _page.SectionHeader("Interface");
-        _window.UiScale.BuildControl(_page.Band(28f, 8f));
-
-        _page.SectionHeader("Controls");
-        _page.AddSync(rebinder.BuildRow(
-            _page.Band(30f, 8f),
-            "Menu Key",
-            () => ModConfig.MenuHotkey,
-            isMenuKey: true
-        ));
-        _page.AddSync(rebinder.BuildRow(_page.Band(30f, 6f), "Previous Profile", () => ModConfig.PreviousProfileKey));
-        _page.AddSync(rebinder.BuildRow(_page.Band(30f, 6f), "Next Profile", () => ModConfig.NextProfileKey));
+        // Controls (menu and profile-switch keys) come from the modules that own them.
+        var handBuilt = new Dictionary<MenuSection, Action>
+        {
+            [MenuSection.Profile] = () =>
+            {
+                BuildProfileSelector(_page.Band(32f, 4f));
+                BuildProfileActions(_page.Band(28f, 6f));
+                _page.AddSync(rebinder.BuildRow(
+                    _page.Band(30f, 6f),
+                    "Profile Key",
+                    () => ProfileStore.Active?.Hotkey,
+                    key => ProfileStore.Active?.SetHotkey(key)
+                ));
+            },
+            [MenuSection.Interface] = () => _window.UiScale.BuildControl(_page.Band(28f, 8f)),
+        };
+        RegistrySections.Build(_page, MenuTab.Settings, rebinder, handBuilt);
 
         Refresh();
     }

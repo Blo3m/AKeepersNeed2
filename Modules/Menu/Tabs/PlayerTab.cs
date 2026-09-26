@@ -1,12 +1,16 @@
+using System;
+using System.Collections.Generic;
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
 using UnityEngine;
 
 namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
-/// Player-focused tweaks: energy, combat and teleport-to-cursor toggles, plus live setters for
-/// the red/green/blue tech points, happiness and per-NPC reputation (<see cref="ValueRow"/>,
-/// <see cref="ReputationPicker"/>). The setters write straight into the current save's
+/// Player-focused tweaks. The energy, combat, gathering and movement rows come from the modules
+/// that own them (<see cref="RegistrySections"/>). This tab builds the live setters itself: red,
+/// green and blue tech points, happiness and per-NPC reputation (<see cref="ValueRow"/>,
+/// <see cref="ReputationPicker"/>). Those write straight into the current save's
 /// <see cref="PlayerData"/>, so they are not part of any profile.
 /// </summary>
 internal sealed class PlayerTab : IMenuTab
@@ -33,51 +37,22 @@ internal sealed class PlayerTab : IMenuTab
     public void Build(RectTransform content)
     {
         _page = new MenuPage(content);
+        var handBuilt = new Dictionary<MenuSection, Action>
+        {
+            [MenuSection.TechPoints] = BuildTechPoints,
+            [MenuSection.Reputation] = BuildReputation,
+        };
+        RegistrySections.Build(_page, MenuTab.Player, _window.Rebinder, handBuilt);
+    }
 
-        _page.SectionHeader("Energy");
-        _page.ToggleRow(
-            "Energy Regen",
-            () => ModConfig.EnergyRegenEnabled.Value,
-            v => ModConfig.EnergyRegenEnabled.Value = v
-        );
-        _page.SliderRow(
-            0.1f,
-            10f,
-            "0.0",
-            () => ModConfig.EnergyRegenRate.Value,
-            v => ModConfig.EnergyRegenRate.Value = v
-        );
-        _page.ToggleRow(
-            "Infinite Energy",
-            () => ModConfig.InfiniteEnergyEnabled.Value,
-            v => ModConfig.InfiniteEnergyEnabled.Value = v
-        );
+    public void Refresh()
+    {
+        _reputation.EnsureLoaded();
+        _page?.Sync();
+    }
 
-        _page.SectionHeader("Combat");
-        _page.ToggleRow(
-            "Infinite Health",
-            () => ModConfig.InfiniteHealthEnabled.Value,
-            v => ModConfig.InfiniteHealthEnabled.Value = v
-        );
-        _page.ToggleRow(
-            "Infinite Stamina",
-            () => ModConfig.InfiniteStaminaEnabled.Value,
-            v => ModConfig.InfiniteStaminaEnabled.Value = v
-        );
-
-        _page.SectionHeader("Movement");
-        _page.ToggleRow(
-            "Teleport to Cursor",
-            () => ModConfig.TeleportToCursorEnabled.Value,
-            v => ModConfig.TeleportToCursorEnabled.Value = v
-        );
-        _page.AddSync(_window.Rebinder.BuildRow(
-            _page.Band(30f, 6f),
-            "Teleport Key",
-            () => ModConfig.TeleportToCursorKey
-        ));
-
-        _page.SectionHeader("Tech Points");
+    private void BuildTechPoints()
+    {
         for (int i = 0; i < TechPoints.GetLength(0); i++)
         {
             string res = TechPoints[i, 0];
@@ -88,8 +63,10 @@ internal sealed class PlayerTab : IMenuTab
                 (player, value) => player.SetRes(res, value)
             );
         }
+    }
 
-        _page.SectionHeader("Reputation");
+    private void BuildReputation()
+    {
         _reputation.Build(_page);
         ValueRow.Add(
             _page,
@@ -106,11 +83,5 @@ internal sealed class PlayerTab : IMenuTab
                 ? $"{npc.Name} reputation"
                 : "Reputation"
         );
-    }
-
-    public void Refresh()
-    {
-        _reputation.EnsureLoaded();
-        _page?.Sync();
     }
 }

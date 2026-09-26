@@ -22,6 +22,17 @@
     <None Remove="dllrefs\**\*.cs" />
   </ItemGroup>
 
+  <!-- Analyzers/ is its own project (compile-time settings checks); its sources must not be
+       compiled into the plugin. It's referenced as an analyzer only, so nothing from it is
+       copied to bin/ or shipped. See Docs/BUILD.md. -->
+  <ItemGroup>
+    <Compile Remove="Analyzers\**" />
+    <None Remove="Analyzers\**" />
+    <ProjectReference Include="Analyzers\AKeepersNeed2.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
+
   <!-- Keep the output folder to just our plugin. References (game DLLs, BepInEx,
        Unity, and the net461 netstandard/System.* facades) stay available for
        COMPILE but are never copied to bin/ — the Unity/Mono + BepInEx runtime

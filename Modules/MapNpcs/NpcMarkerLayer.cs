@@ -129,7 +129,7 @@ internal sealed class NpcMarkerLayer : MonoBehaviour
 
     private void OnEnable()
     {
-        if (!ModConfig.MapNpcsEnabled.Value)
+        if (!MapNpcsModule.ShowEnabled)
         {
             Destroy(gameObject);
         }
@@ -153,7 +153,7 @@ internal sealed class NpcMarkerLayer : MonoBehaviour
 
     private void Update()
     {
-        if (!ModConfig.MapNpcsEnabled.Value)
+        if (!MapNpcsModule.ShowEnabled)
         {
             Destroy(gameObject);
             return;

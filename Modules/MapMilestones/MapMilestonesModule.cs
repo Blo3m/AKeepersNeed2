@@ -1,3 +1,4 @@
+using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -15,12 +16,25 @@ namespace AKeepersNeed2.Modules.MapMilestones;
 /// </summary>
 internal sealed class MapMilestonesModule : HarmonyModule
 {
+    private static ConfigEntry<bool> _enabled;
+
     private static readonly AccessTools.FieldRef<LazyWidget<MapPageWidgetData>, MapPageWidgetData> DataRef =
         AccessTools.FieldRefAccess<LazyWidget<MapPageWidgetData>, MapPageWidgetData>("data");
 
     public override string Name => "MapMilestones";
 
-    protected override ConfigEntry<bool> EnabledFlag => ModConfig.UnlockMilestonesEnabled;
+    protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    public override void DeclareSettings(SettingsBuilder settings)
+    {
+        _enabled = settings.Profile(
+            "MapMilestones",
+            "Enabled",
+            false,
+            "Draw every map milestone as activated (teleportable). Display-only."
+        );
+        settings.Toggle(MenuSection.Map, 20, "Unlock Milestones", _enabled);
+    }
 
     protected override void Apply(Harmony harmony)
     {
