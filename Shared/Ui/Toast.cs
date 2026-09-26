@@ -5,9 +5,11 @@ using UnityEngine.UI;
 namespace AKeepersNeed2.Shared.Ui;
 
 /// <summary>
-/// A short native-styled notice at the top-centre of the screen that holds, then fades out.
+/// A short native-styled notice in the top-left corner of the screen that holds, then fades out.
 /// Runs on unscaled time so it still fades while the game is paused. One shared instance is
-/// created on first use; any module posts to it through <see cref="Show"/>.
+/// created on first use; any module posts to it through <see cref="Show"/>. A new message
+/// replaces the current one; callers that merge repeats (e.g. a running total) pass a key and
+/// check <see cref="IsShowing"/> first.
 /// </summary>
 internal sealed class Toast : MonoBehaviour
 {
@@ -20,8 +22,18 @@ internal sealed class Toast : MonoBehaviour
     private RectTransform _panel;
     private TextMeshProUGUI _text;
     private float _shownAt;
+    private string _key;
 
-    public static void Show(string message)
+    /// <summary>True while the toast last posted with <paramref name="key"/> is still on screen.</summary>
+    public static bool IsShowing(string key)
+    {
+        return key != null
+            && _instance != null
+            && _instance.gameObject.activeSelf
+            && _instance._key == key;
+    }
+
+    public static void Show(string message, string key = null)
     {
         // Unity's null check: the instance dies with the UI root on a scene reload.
         if (_instance == null)
@@ -33,7 +45,7 @@ internal sealed class Toast : MonoBehaviour
                 return;
             }
         }
-        _instance.Display(message);
+        _instance.Display(message, key);
     }
 
     private static Toast Create()
@@ -76,10 +88,10 @@ internal sealed class Toast : MonoBehaviour
             panel.type = Image.Type.Sliced;
         }
         _panel = panel.rectTransform;
-        _panel.anchorMin = _panel.anchorMax = new Vector2(0.5f, 1f);
-        _panel.pivot = new Vector2(0.5f, 1f);
+        _panel.anchorMin = _panel.anchorMax = new Vector2(0f, 1f);
+        _panel.pivot = new Vector2(0f, 1f);
         _panel.sizeDelta = new Vector2(260f, 30f);
-        _panel.anchoredPosition = new Vector2(0f, -40f);
+        _panel.anchoredPosition = new Vector2(20f, -40f);
 
         _text = MenuUi.CreateText("Text", _panel, 13f, TextAlignmentOptions.Center);
         MenuUi.ApplyHeaderText(_text);
@@ -88,8 +100,9 @@ internal sealed class Toast : MonoBehaviour
         _text.overflowMode = TextOverflowModes.Ellipsis;
     }
 
-    private void Display(string message)
+    private void Display(string message, string key)
     {
+        _key = key;
         float scale = Mathf.Clamp(ModConfig.UiScale.Value, 0.5f, 3f);
         _panel.localScale = new Vector3(scale, scale, 1f);
         _text.text = message;

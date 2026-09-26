@@ -78,7 +78,10 @@ internal sealed class PlayerTab : IMenuTab
                 {
                     player.SetNPCRep(rep.Res, value);
                 }
-            }
+            },
+            () => CurrentRep() is RepEntry rep
+                ? $"{rep.Name} reputation"
+                : "Reputation"
         );
     }
 
@@ -93,9 +96,16 @@ internal sealed class PlayerTab : IMenuTab
 
     /// <summary>
     /// "Label [value] [Set]": the field shows the live value on every sync, and Set (or Enter)
-    /// writes the typed value. Blank while no game is loaded.
+    /// writes the typed value and toasts the result. Blank while no game is loaded.
+    /// <paramref name="toastLabel"/> overrides <paramref name="label"/> in the toast/log when
+    /// the row's target changes (the reputation row names the selected NPC).
     /// </summary>
-    private void ValueRow(string label, Func<PlayerData, int?> get, Action<PlayerData, int> set)
+    private void ValueRow(
+        string label,
+        Func<PlayerData, int?> get,
+        Action<PlayerData, int> set,
+        Func<string> toastLabel = null
+    )
     {
         RectTransform band = _page.Band(30f, 8f);
 
@@ -138,19 +148,28 @@ internal sealed class PlayerTab : IMenuTab
 
         void Apply()
         {
+            string target = toastLabel?.Invoke() ?? label;
             PlayerData player = MainGame.PlayerData;
             if (player == null)
             {
-                Plugin.Logger.LogWarning($"[Player] can't set {label} — no active game/player.");
+                Plugin.Logger.LogWarning($"[Player] can't set {target} — no active game/player.");
+                Toast.Show("No active game");
+                return;
+            }
+            if (get(player) == null)
+            {
+                Toast.Show($"Can't set {target}");
                 return;
             }
             if (!int.TryParse(field.text, out int value))
             {
+                Toast.Show("Invalid number");
                 Sync();
                 return;
             }
             set(player, value);
-            Plugin.Logger.LogInfo($"[Player] set {label} to {value}.");
+            Plugin.Logger.LogInfo($"[Player] set {target} to {value}.");
+            Toast.Show($"{target} set to {value}");
             Sync();
         }
 

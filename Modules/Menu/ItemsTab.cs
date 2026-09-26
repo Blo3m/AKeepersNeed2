@@ -32,6 +32,7 @@ internal sealed class ItemsTab : IMenuTab
     private TextMeshProUGUI _countText;
     private TextMeshProUGUI _categoryLabel;
     private int _categoryIndex;
+    private int _giveTotal;
 
     public string Title => "Items";
 
@@ -314,7 +315,7 @@ internal sealed class ItemsTab : IMenuTab
         row.Icon.enabled = sprite != null;
     }
 
-    private static void GiveItem(ItemRow row)
+    private void GiveItem(ItemRow row)
     {
         if (row.Def == null)
         {
@@ -324,6 +325,7 @@ internal sealed class ItemsTab : IMenuTab
         if (player == null || player.Inventory == null)
         {
             Plugin.Logger.LogWarning("[Items] can't give — no active game/player.");
+            Toast.Show("No active game");
             return;
         }
         int amount = 1;
@@ -331,8 +333,27 @@ internal sealed class ItemsTab : IMenuTab
         {
             amount = parsed;
         }
-        player.Inventory.AddItemToInventory(new Item(row.Def.id, amount));
-        Plugin.Logger.LogInfo($"[Items] gave {amount}x {row.Def.id}.");
+        var item = new Item(row.Def.id, amount);
+        if (!player.Inventory.AddItemToInventory(item))
+        {
+            Plugin.Logger.LogWarning($"[Items] couldn't give {amount}x {row.Def.id} — inventory full.");
+            Toast.Show("Inventory full");
+            return;
+        }
+        // AddItemToInventory may add only part of the stack; the unadded rest stays on the source item.
+        int added = amount - item.Count;
+        Plugin.Logger.LogInfo($"[Items] gave {added}/{amount}x {row.Def.id}.");
+
+        string key = "give:" + row.Def.id;
+        _giveTotal = Toast.IsShowing(key)
+            ? _giveTotal + added
+            : added;
+        Toast.Show(
+            added < amount
+                ? $"Added {_giveTotal}x {row.Name.text} ({amount - added} not added)"
+                : $"Added {_giveTotal}x {row.Name.text}",
+            key
+        );
     }
 
     private struct Entry
