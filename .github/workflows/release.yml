@@ -24,7 +24,9 @@ jobs:
 
       - name: Build
         run: |
-          $version = '${{ github.ref_name }}'.TrimStart('v')
+          # BepInEx parses the plugin version with System.Version, which rejects semver
+          # suffixes like "-pre" and then refuses to load the plugin, so drop the suffix.
+          $version = '${{ github.ref_name }}'.TrimStart('v') -replace '-.*$', ''
           ./build.ps1 -Configuration Release -NoDeploy -ManagedDir $env:GAME_MANAGED_DIR -Version $version
 
       - name: Package
@@ -41,3 +43,4 @@ jobs:
         with:
           files: AKeepersNeed2-${{ github.ref_name }}.zip
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
