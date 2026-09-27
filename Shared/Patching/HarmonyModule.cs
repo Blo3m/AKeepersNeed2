@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using AKeepersNeed2.Core;
 using AKeepersNeed2.Core.Settings;
 using BepInEx.Configuration;
@@ -12,6 +14,8 @@ namespace AKeepersNeed2.Shared.Patching;
 /// <see cref="EnabledFlag"/> is on and removed when it's off, reacting to runtime
 /// toggles. Multiplier-style values are read live inside the patch body, so only the
 /// on/off flag drives patch/unpatch — changing a multiplier takes effect immediately.
+/// A module with several independent toggles lists them in <see cref="GateFlags"/>; the
+/// patches stay applied while any of them is on.
 /// </summary>
 internal abstract class HarmonyModule : IModule, ISettingsDeclarer
 {
@@ -25,6 +29,17 @@ internal abstract class HarmonyModule : IModule, ISettingsDeclarer
     /// <summary>The config flag that gates this module's patch (bound in <see cref="DeclareSettings"/>).</summary>
     protected abstract ConfigEntry<bool> EnabledFlag { get; }
 
+    /// <summary>Every flag that needs the patches; defaults to just <see cref="EnabledFlag"/>.</summary>
+    protected virtual IEnumerable<ConfigEntry<bool>> GateFlags
+    {
+        get
+        {
+            yield return EnabledFlag;
+        }
+    }
+
+    private bool AnyFlagOn => GateFlags.Any(flag => flag.Value);
+
     /// <summary>Binds the module's config (including <see cref="EnabledFlag"/>) and declares its menu rows.</summary>
     public abstract void DeclareSettings(SettingsBuilder settings);
 
@@ -34,8 +49,11 @@ internal abstract class HarmonyModule : IModule, ISettingsDeclarer
     public void Enable()
     {
         _harmony = new Harmony($"{MyPluginInfo.PLUGIN_GUID}.{Name}");
-        EnabledFlag.SettingChanged += OnFlagChanged;
-        if (EnabledFlag.Value)
+        foreach (ConfigEntry<bool> flag in GateFlags)
+        {
+            flag.SettingChanged += OnFlagChanged;
+        }
+        if (AnyFlagOn)
         {
             ApplyPatches();
         }
@@ -43,14 +61,17 @@ internal abstract class HarmonyModule : IModule, ISettingsDeclarer
 
     public void Disable()
     {
-        EnabledFlag.SettingChanged -= OnFlagChanged;
+        foreach (ConfigEntry<bool> flag in GateFlags)
+        {
+            flag.SettingChanged -= OnFlagChanged;
+        }
         RemovePatches();
         _harmony = null;
     }
 
     private void OnFlagChanged(object sender, EventArgs e)
     {
-        if (EnabledFlag.Value)
+        if (AnyFlagOn)
         {
             ApplyPatches();
         }

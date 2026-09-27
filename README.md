@@ -13,14 +13,27 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 **Player**
 - **Energy regen** — passive energy regeneration while awake (energy per 5s)
 - **Infinite energy** — energy never decreases
+- **Instant sleep** — energy is full as soon as you fall asleep; you wake up about 2 seconds later
 - **Infinite health** — you take no HP damage
 - **Infinite stamina** — combat stamina (sword/bow attacks) never drains
 - **Ignore gathering mastery** — chop, mine and dig objects above your mastery level, as if
   you just met the requirement
+- **Gathering speed** — chop, mine, dig and harvest with fewer swings (1–20×)
+  - **One hit** — every swing finishes the object
 - **Teleport to cursor** — press a key (default middle mouse, rebindable) to teleport to the
   nearest walkable spot under the cursor, outdoors or indoors
-- **Tech points** — view and set your red, green and blue tech points and happiness
+- **Movement speed** — walk faster or slower (0.5–5×), always or as a sprint: hold or toggle a
+  key (unbound by default). Optionally ignore the game's slowdown while attacking
+- **Infinite durability** — tools and items used up by durability in crafts never wear down
+- **Money and happiness** — view and set your money and happiness
+- **Trade income** — vendors pay more for what you sell (1–50×), optionally even when they
+  can't afford it
+- **Other income** — multiply money from everything except trading, like quests and sermons (1–50×)
+
+**Progression**
+- **Tech points** — view and set your red, green and blue tech points
 - **Reputation** — pick an NPC and view or set your reputation with them
+- **Reputation multiplier** — multiply reputation gained with NPCs and districts (1–20×)
 
 **Drops**
 - **Resource drops** — multiply loot from destroyed/harvested world objects

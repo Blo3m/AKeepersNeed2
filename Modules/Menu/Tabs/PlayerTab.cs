@@ -7,24 +7,15 @@ using UnityEngine;
 namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
-/// Player-focused tweaks. The energy, combat, gathering and movement rows come from the modules
-/// that own them (<see cref="RegistrySections"/>). This tab builds the live setters itself: red,
-/// green and blue tech points, happiness and per-NPC reputation (<see cref="ValueRow"/>,
-/// <see cref="ReputationPicker"/>). Those write straight into the current save's
-/// <see cref="PlayerData"/>, so they are not part of any profile.
+/// Player-focused tweaks. The energy, combat, gathering, movement, tools and money-multiplier
+/// rows come from the modules that own them (<see cref="RegistrySections"/>). This tab builds
+/// the Money section's live setters itself, money and happiness (<see cref="ValueRow"/>). Those
+/// write straight into the current save's <see cref="PlayerData"/>, so they are not part of any
+/// profile.
 /// </summary>
 internal sealed class PlayerTab : IMenuTab
 {
-    private static readonly string[,] TechPoints =
-    {
-        { "tech_red", "Red Tech Points" },
-        { "tech_green", "Green Tech Points" },
-        { "tech_blue", "Blue Tech Points" },
-        { "happiness", "Happiness" },
-    };
-
     private readonly AKNMenuWindow _window;
-    private readonly ReputationPicker _reputation = new ReputationPicker();
     private MenuPage _page;
 
     public PlayerTab(AKNMenuWindow window)
@@ -39,49 +30,29 @@ internal sealed class PlayerTab : IMenuTab
         _page = new MenuPage(content);
         var handBuilt = new Dictionary<MenuSection, Action>
         {
-            [MenuSection.TechPoints] = BuildTechPoints,
-            [MenuSection.Reputation] = BuildReputation,
+            [MenuSection.Money] = BuildMoney,
         };
         RegistrySections.Build(_page, MenuTab.Player, _window.Rebinder, handBuilt);
     }
 
     public void Refresh()
     {
-        _reputation.EnsureLoaded();
         _page?.Sync();
     }
 
-    private void BuildTechPoints()
+    private void BuildMoney()
     {
-        for (int i = 0; i < TechPoints.GetLength(0); i++)
-        {
-            string res = TechPoints[i, 0];
-            ValueRow.Add(
-                _page,
-                TechPoints[i, 1],
-                player => player.GetResInt(res),
-                (player, value) => player.SetRes(res, value)
-            );
-        }
-    }
-
-    private void BuildReputation()
-    {
-        _reputation.Build(_page);
         ValueRow.Add(
             _page,
-            "Reputation",
-            player => _reputation.Current is ReputationPicker.Npc npc ? player.GetNPCRep(npc.Res) : (int?)null,
-            (player, value) =>
-            {
-                if (_reputation.Current is ReputationPicker.Npc npc)
-                {
-                    player.SetNPCRep(npc.Res, value);
-                }
-            },
-            () => _reputation.Current is ReputationPicker.Npc npc
-                ? $"{npc.Name} reputation"
-                : "Reputation"
+            "Money",
+            player => player.GetResInt("money"),
+            (player, value) => player.SetRes("money", value)
+        );
+        ValueRow.Add(
+            _page,
+            "Happiness",
+            player => player.GetResInt("happiness"),
+            (player, value) => player.SetRes("happiness", value)
         );
     }
 }

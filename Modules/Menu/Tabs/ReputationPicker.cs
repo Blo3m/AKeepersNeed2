@@ -11,7 +11,7 @@ namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
 /// A `&lt; NPC name &gt;` cycler over every NPC with a reputation resource, picking which
-/// reputation the Player tab's reputation row edits.
+/// reputation the Progression tab's reputation row edits.
 /// </summary>
 internal sealed class ReputationPicker
 {

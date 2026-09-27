@@ -1,4 +1,5 @@
 using System;
+using System.Text;
 using BepInEx.Configuration;
 using UnityEngine;
 
@@ -66,9 +67,58 @@ internal sealed class SettingsBuilder
         Add(row, section, order, string.Empty);
     }
 
-    public void Key(MenuSection section, int order, string label, ConfigEntry<KeyCode> entry, bool isUnbindable = false)
+    public void Key(
+        MenuSection section,
+        int order,
+        string label,
+        ConfigEntry<KeyCode> entry,
+        bool isUnbindable = false,
+        Func<bool> enabledWhen = null
+    )
     {
-        Add(new KeySettingRow { Entry = entry, IsUnbindable = isUnbindable }, section, order, label);
+        var row = new KeySettingRow { Entry = entry, IsUnbindable = isUnbindable, EnabledWhen = enabledWhen };
+        Add(row, section, order, label);
+    }
+
+    /// <summary>
+    /// A cycler over every value of <typeparamref name="T"/>, shown with spaced names
+    /// ("HoldKey" → "Hold Key").
+    /// </summary>
+    public void Choice<T>(
+        MenuSection section,
+        int order,
+        string label,
+        ConfigEntry<T> entry,
+        Func<bool> enabledWhen = null
+    )
+        where T : struct, Enum
+    {
+        var values = (T[])Enum.GetValues(typeof(T));
+        var row = new ChoiceSettingRow
+        {
+            Current = () => SpaceWords(entry.Value.ToString()),
+            Step = delta =>
+            {
+                int index = Array.IndexOf(values, entry.Value);
+                entry.Value = values[((index + delta) % values.Length + values.Length) % values.Length];
+            },
+            EnabledWhen = enabledWhen,
+        };
+        Add(row, section, order, label);
+    }
+
+    private static string SpaceWords(string name)
+    {
+        var spaced = new StringBuilder(name.Length + 4);
+        for (int i = 0; i < name.Length; i++)
+        {
+            if (i > 0 && char.IsUpper(name[i]))
+            {
+                spaced.Append(' ');
+            }
+            spaced.Append(name[i]);
+        }
+        return spaced.ToString();
     }
 
     private void Add(SettingRow row, MenuSection section, int order, string label)

@@ -42,6 +42,21 @@ internal sealed class SliderSettingRow : SettingRow
     public string Format { get; set; }
 }
 
+/// <summary>
+/// A `&lt; Value &gt;` cycler over an enum setting's values. Greyed out while
+/// <see cref="EnabledWhen"/> returns false.
+/// </summary>
+internal sealed class ChoiceSettingRow : SettingRow
+{
+    /// <summary>The current value's display name.</summary>
+    public Func<string> Current { get; set; }
+
+    /// <summary>Moves to the next (+1) or previous (-1) value, wrapping around.</summary>
+    public Action<int> Step { get; set; }
+
+    public Func<bool> EnabledWhen { get; set; }
+}
+
 /// <summary>A rebindable hotkey. Every key row also takes part in key-conflict checks.</summary>
 internal sealed class KeySettingRow : SettingRow
 {
@@ -52,4 +67,7 @@ internal sealed class KeySettingRow : SettingRow
     /// only rebound to a different key. Used for the menu key, so the menu can't be locked out.
     /// </summary>
     public bool IsUnbindable { get; set; }
+
+    /// <summary>Greys the row out while this returns false.</summary>
+    public Func<bool> EnabledWhen { get; set; }
 }

@@ -29,10 +29,16 @@ internal enum MenuSection
     [Section(MenuTab.Player, "Movement", 40)]
     Movement,
 
-    [Section(MenuTab.Player, "Tech Points", 50)]
+    [Section(MenuTab.Player, "Tools", 50)]
+    Tools,
+
+    [Section(MenuTab.Player, "Money", 60)]
+    Money,
+
+    [Section(MenuTab.Progression, "Tech Points", 10)]
     TechPoints,
 
-    [Section(MenuTab.Player, "Reputation", 60)]
+    [Section(MenuTab.Progression, "Reputation", 20)]
     Reputation,
 
     [Section(MenuTab.Drops, "Drops", 10)]

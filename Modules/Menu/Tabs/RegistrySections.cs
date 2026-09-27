@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
 using AKeepersNeed2.Modules.Menu.Keybinds;
+using UnityEngine;
 
 namespace AKeepersNeed2.Modules.Menu.Tabs;
 
@@ -65,13 +66,22 @@ internal static class RegistrySections
                     value => slider.Entry.Value = value
                 );
                 break;
+            case ChoiceSettingRow choice:
+                page.ChoiceRow(
+                    choice.Label,
+                    choice.Current,
+                    delta =>
+                    {
+                        choice.Step(delta);
+                        page.Sync();
+                    },
+                    choice.EnabledWhen
+                );
+                break;
             case KeySettingRow key:
-                page.AddSync(rebinder.BuildRow(
-                    page.Band(30f, 6f),
-                    key.Label,
-                    () => key.Entry,
-                    isUnbindable: key.IsUnbindable
-                ));
+                RectTransform band = page.Band(30f, 6f);
+                page.GreyOutUnless(band, key.EnabledWhen);
+                page.AddSync(rebinder.BuildRow(band, key.Label, () => key.Entry, isUnbindable: key.IsUnbindable));
                 break;
             default:
                 Plugin.Logger.LogWarning($"[Menu] no row builder for {row.GetType().Name} ('{row.Label}').");

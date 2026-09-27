@@ -5,6 +5,7 @@ internal enum MenuTab
 {
     Settings,
     Player,
+    Progression,
     Drops,
     Crafting,
     Items,

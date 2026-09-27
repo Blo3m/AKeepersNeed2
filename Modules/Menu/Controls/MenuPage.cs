@@ -112,28 +112,67 @@ internal sealed class MenuPage
     public void ToggleRow(string label, Func<bool> get, Action<bool> set, Func<bool> enabledWhen = null)
     {
         RectTransform band = NewBand(30f, 8f);
-        if (enabledWhen != null)
-        {
-            var group = band.gameObject.AddComponent<CanvasGroup>();
-            void SyncEnabled()
-            {
-                bool enabled = enabledWhen();
-                group.interactable = enabled;
-                group.blocksRaycasts = enabled;
-                group.alpha = enabled ? 1f : DisabledAlpha;
-            }
-            SyncEnabled();
-            _syncs.Add(SyncEnabled);
-        }
-
-        TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f, TextAlignmentOptions.Left);
-        MenuUi.ApplyLabelText(name);
-        MenuUi.SetRect(name.rectTransform, Anchors.Fill, new Vector2(0f, 0f), new Vector2(-84f, 0f));
-        name.text = label;
+        GreyOutUnless(band, enabledWhen);
+        AddRowLabel(band, label, 84f);
 
         RectTransform rect = MenuUi.CreateRect("Toggle", band);
         MenuUi.SetRect(rect, Anchors.Right, new Vector2(-76f, 3f), new Vector2(0f, -3f));
         _syncs.Add(FillToggle(rect, get, set));
+    }
+
+    /// <summary>
+    /// A row with the label on the left and a `&lt; value &gt;` cycler on the right.
+    /// <paramref name="step"/> gets -1 or +1; greyed out like <see cref="ToggleRow"/>.
+    /// </summary>
+    public void ChoiceRow(string label, Func<string> current, Action<int> step, Func<bool> enabledWhen = null)
+    {
+        const float width = 150f;
+        const float arrow = 26f;
+        RectTransform band = NewBand(30f, 8f);
+        GreyOutUnless(band, enabledWhen);
+        AddRowLabel(band, label, width + 8f);
+
+        RectTransform cycler = MenuUi.CreateRect("Choice", band);
+        MenuUi.SetRect(cycler, Anchors.Right, new Vector2(-width, 3f), new Vector2(0f, -3f));
+
+        Image field = MenuUi.CreateImage("Field", cycler, new Color(0.2f, 0.1f, 0.07f, 1f));
+        MenuUi.SetRect(field.rectTransform, Anchors.Fill, new Vector2(arrow + 2f, 0f), new Vector2(-arrow - 2f, 0f));
+        field.raycastTarget = false;
+        MenuUi.ApplyCell(field);
+
+        TextMeshProUGUI value = MenuUi.CreateText("Value", cycler, 12f, TextAlignmentOptions.Center);
+        MenuUi.ApplyValueText(value);
+        MenuUi.SetRect(value.rectTransform, Anchors.Fill, new Vector2(arrow + 2f, 0f), new Vector2(-arrow - 2f, 0f));
+        value.textWrappingMode = TextWrappingModes.NoWrap;
+        value.overflowMode = TextOverflowModes.Ellipsis;
+
+        LazyButton prev = MenuUi.CreateButton("Prev", cycler, "<", Anchors.Left, Vector2.zero, new Vector2(arrow, 0f));
+        LazyButton next = MenuUi.CreateButton(
+            "Next",
+            cycler,
+            ">",
+            Anchors.Right,
+            new Vector2(-arrow, 0f),
+            Vector2.zero
+        );
+
+        void Sync()
+        {
+            value.text = current();
+        }
+
+        prev.onClick.AddListener(() =>
+        {
+            step(-1);
+            Sync();
+        });
+        next.onClick.AddListener(() =>
+        {
+            step(1);
+            Sync();
+        });
+        Sync();
+        _syncs.Add(Sync);
     }
 
     /// <summary>A full-width slider with its value overlaid in the centre.</summary>
@@ -267,6 +306,34 @@ internal sealed class MenuPage
             Refresh(slider.value);
         };
         return slider;
+    }
+
+    /// <summary>Greys out and blocks <paramref name="band"/> while <paramref name="enabledWhen"/> is false.</summary>
+    public void GreyOutUnless(RectTransform band, Func<bool> enabledWhen)
+    {
+        if (enabledWhen == null)
+        {
+            return;
+        }
+        var group = band.gameObject.AddComponent<CanvasGroup>();
+        void SyncEnabled()
+        {
+            bool enabled = enabledWhen();
+            group.interactable = enabled;
+            group.blocksRaycasts = enabled;
+            group.alpha = enabled ? 1f : DisabledAlpha;
+        }
+        SyncEnabled();
+        _syncs.Add(SyncEnabled);
+    }
+
+    /// <summary>The row's left-aligned label, leaving <paramref name="controlWidth"/> free on the right.</summary>
+    private static void AddRowLabel(RectTransform band, string label, float controlWidth)
+    {
+        TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f, TextAlignmentOptions.Left);
+        MenuUi.ApplyLabelText(name);
+        MenuUi.SetRect(name.rectTransform, Anchors.Fill, Vector2.zero, new Vector2(-controlWidth, 0f));
+        name.text = label;
     }
 
     private static void AddRule(RectTransform parent, string name, Color color)
