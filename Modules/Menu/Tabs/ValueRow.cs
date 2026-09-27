@@ -9,8 +9,8 @@ namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
 /// A "Label [value] [Set]" row for a live <see cref="PlayerData"/> value. The field shows the
-/// current value on every sync (blank while no game is loaded), and Set (or Enter) writes the
-/// typed value and toasts the result.
+/// current value on every sync (blank while no game is loaded). Set (or Enter) asks for
+/// confirmation, since the value is written into the save, then writes it and toasts the result.
 /// </summary>
 internal static class ValueRow
 {
@@ -21,6 +21,7 @@ internal static class ValueRow
     /// </summary>
     public static void Add(
         MenuPage page,
+        MenuDialogHost dialogs,
         string label,
         Func<PlayerData, int?> get,
         Action<PlayerData, int> set,
@@ -85,6 +86,22 @@ internal static class ValueRow
             {
                 Toast.Show("Invalid number");
                 Sync();
+                return;
+            }
+            dialogs.ShowConfirm(
+                $"Set {target}?",
+                $"{target} will be set to {value} in your current save. This is permanent.",
+                "Set",
+                () => Write(target, value)
+            );
+        }
+
+        void Write(string target, int value)
+        {
+            PlayerData player = MainGame.PlayerData;
+            if (player == null)
+            {
+                Toast.Show("No active game");
                 return;
             }
             set(player, value);

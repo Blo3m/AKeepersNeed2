@@ -1,4 +1,5 @@
 using AKeepersNeed2.Core.Settings;
+using AKeepersNeed2.Shared.Crafting;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -10,7 +11,7 @@ namespace AKeepersNeed2.Modules.InstantCraft;
 /// length is fixed (<c>totalProgressTicks</c> from the def's duration plus perks), so a postfix
 /// shrinks it to 1. It isn't 0 because the progress getters treat 0 as "no progress". Garden growing
 /// runs on the same timer and is left alone, as are star and autopsy crafts, whose quality
-/// is graded on ticks worked.
+/// is graded on ticks worked. Zombie crafts are left alone too: the Zombies tab controls their speed.
 /// </summary>
 internal sealed class InstantCraftModule : HarmonyModule
 {
@@ -29,7 +30,7 @@ internal sealed class InstantCraftModule : HarmonyModule
             "InstantCraft",
             "Enabled",
             false,
-            "Crafts finish immediately. Garden growing, star and autopsy crafts keep their normal time."
+            "Your crafts finish immediately. Garden growing, star, autopsy and zombie crafts keep their normal time."
         );
         settings.Toggle(MenuSection.Crafting, 20, "Instant Crafting", _enabled);
     }
@@ -49,6 +50,10 @@ internal sealed class InstantCraftModule : HarmonyModule
             return;
         }
         if (__instance.Def.isStarCraft || __instance.Def.isAutopsyCraft)
+        {
+            return;
+        }
+        if (__instance.ParamsData != null && CraftWorkers.IsZombieCraft(__instance.ParamsData))
         {
             return;
         }

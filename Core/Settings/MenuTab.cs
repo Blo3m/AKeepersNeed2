@@ -8,6 +8,8 @@ internal enum MenuTab
     Progression,
     Drops,
     Crafting,
+    Zombies,
+    Garden,
     Items,
     Map,
 }

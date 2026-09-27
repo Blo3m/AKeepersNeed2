@@ -25,14 +25,15 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Movement speed** — walk faster or slower (0.5–5×), always or as a sprint: hold or toggle a
   key (unbound by default). Optionally ignore the game's slowdown while attacking
 - **Infinite durability** — tools and items used up by durability in crafts never wear down
-- **Money and happiness** — view and set your money and happiness
+- **Money and happiness** — view and set your money and happiness (asks for confirmation, since
+  it changes your save)
 - **Trade income** — vendors pay more for what you sell (1–50×), optionally even when they
   can't afford it
 - **Other income** — multiply money from everything except trading, like quests and sermons (1–50×)
 
 **Progression**
-- **Tech points** — view and set your red, green and blue tech points
-- **Reputation** — pick an NPC and view or set your reputation with them
+- **Tech points** — view and set your red, green and blue tech points (with confirmation)
+- **Reputation** — pick an NPC and view or set your reputation with them (with confirmation)
 - **Reputation multiplier** — multiply reputation gained with NPCs and districts (1–20×)
 
 **Drops**
@@ -43,13 +44,24 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 **Crafting**
 - **Free crafting** — craft without the required items; nothing is consumed (includes
   alchemy and tool durability)
-- **Instant crafting** — crafts finish immediately (garden growing, star and autopsy crafts
-  keep their normal time)
+- **Instant crafting** — your crafts finish immediately (garden growing, star, autopsy and
+  zombie crafts keep their normal time)
 - **Ignore crafting mastery** — run crafts above your mastery level, including star crafts and
   autopsies, as if you just met the requirement
-- **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 - **Free building** — build without the required items; nothing is consumed (includes
   town buildings)
+
+**Zombies**
+- **Zombie craft speed** — zombies work crafting stations faster (1–50×)
+- **Zombie gather speed** — zombies chop, mine and harvest faster (1–50×)
+- **Zombie walk speed** — every zombie walks faster or slower (0.5–10×)
+- **Max mastery** — zombies work with enough mastery for every job at full output (not saved;
+  the boosted value shows in the zombie window while on)
+
+**Garden**
+- **Growth speed** — crops grow faster (1–100×)
+- **Instant grow** — crops finish growing right after planting
+- **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 
 **Items**
 - **Item adder** — search or filter every item by category and add any amount to your

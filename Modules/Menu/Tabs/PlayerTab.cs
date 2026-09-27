@@ -44,12 +44,14 @@ internal sealed class PlayerTab : IMenuTab
     {
         ValueRow.Add(
             _page,
+            _window.Dialogs,
             "Money",
             player => player.GetResInt("money"),
             (player, value) => player.SetRes("money", value)
         );
         ValueRow.Add(
             _page,
+            _window.Dialogs,
             "Happiness",
             player => player.GetResInt("happiness"),
             (player, value) => player.SetRes("happiness", value)

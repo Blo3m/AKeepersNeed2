@@ -87,6 +87,8 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new ProgressionTab(this),
             new ConfigTab(MenuTab.Drops, _rebinder),
             new ConfigTab(MenuTab.Crafting, _rebinder),
+            new ConfigTab(MenuTab.Zombies, _rebinder),
+            new ConfigTab(MenuTab.Garden, _rebinder),
             new ItemsTab(),
             new ConfigTab(MenuTab.Map, _rebinder),
         };

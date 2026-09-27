@@ -53,6 +53,15 @@ internal enum MenuSection
     [Section(MenuTab.Crafting, "Building", 20)]
     Building,
 
+    [Section(MenuTab.Zombies, "Work", 10)]
+    ZombieWork,
+
+    [Section(MenuTab.Zombies, "Mastery", 20)]
+    ZombieMastery,
+
+    [Section(MenuTab.Garden, "Growth", 10)]
+    Growth,
+
     [Section(MenuTab.Map, "Map", 10)]
     Map,
 }

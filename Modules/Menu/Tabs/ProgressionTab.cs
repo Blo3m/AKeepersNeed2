@@ -57,6 +57,7 @@ internal sealed class ProgressionTab : IMenuTab
             string res = TechPoints[i, 0];
             ValueRow.Add(
                 _page,
+                _window.Dialogs,
                 TechPoints[i, 1],
                 player => player.GetResInt(res),
                 (player, value) => player.SetRes(res, value)
@@ -69,6 +70,7 @@ internal sealed class ProgressionTab : IMenuTab
         _reputation.Build(_page);
         ValueRow.Add(
             _page,
+            _window.Dialogs,
             "Reputation",
             player => _reputation.Current is ReputationPicker.Npc npc ? player.GetNPCRep(npc.Res) : (int?)null,
             (player, value) =>

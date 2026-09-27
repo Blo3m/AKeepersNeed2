@@ -41,7 +41,7 @@ internal sealed class IgnoreGardenMasteryModule : HarmonyModule
             false,
             "Plant and grow crops without the gardening mastery they need, as if you just met it."
         );
-        settings.Toggle(MenuSection.Crafting, 40, "Ignore Garden Mastery", _enabled);
+        settings.Toggle(MenuSection.Growth, 40, "Ignore Garden Mastery", _enabled);
     }
 
     protected override void Apply(Harmony harmony)

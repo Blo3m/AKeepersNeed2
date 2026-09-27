@@ -7,7 +7,7 @@ namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
 /// A tab built entirely from the rows modules declared for it (<see cref="RegistrySections"/>).
-/// Used for the Drops, Crafting and Map tabs.
+/// Used for the Drops, Crafting, Zombies, Garden and Map tabs.
 /// </summary>
 internal sealed class ConfigTab : IMenuTab
 {
