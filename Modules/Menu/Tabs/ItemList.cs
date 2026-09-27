@@ -35,6 +35,7 @@ internal sealed class ItemList
     {
         _onGive = onGive;
 
+        area = ScrollHints.SplitArea(area, out RectTransform up, out RectTransform down);
         _scroll = area.gameObject.AddComponent<ScrollRect>();
         _scroll.horizontal = false;
         _scroll.vertical = true;
@@ -57,6 +58,7 @@ internal sealed class ItemList
         _content.sizeDelta = new Vector2(0f, 0f);
         _scroll.content = _content;
         _scroll.onValueChanged.AddListener(_ => UpdateVisibleRows());
+        _ = new ScrollHints(_scroll, up, down);
     }
 
     /// <summary>Shows <paramref name="items"/>, scrolled back to the top.</summary>

@@ -1,5 +1,6 @@
 using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
+using AKeepersNeed2.Shared.Zombies;
 using BepInEx.Configuration;
 using HarmonyLib;
 
@@ -22,6 +23,9 @@ internal sealed class ZombieWalkSpeedModule : HarmonyModule
     public override string Name => "ZombieWalkSpeed";
 
     protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    // A zombie's own speed (Zombies tab editor) applies even while the global toggle is off.
+    protected override bool AlwaysPatched => true;
 
     public override void DeclareSettings(SettingsBuilder settings)
     {
@@ -47,9 +51,9 @@ internal sealed class ZombieWalkSpeedModule : HarmonyModule
 
     private static void ScaleTime(MovementComponent __instance, ref float deltaTime)
     {
-        if (Owner(__instance) is ZombieWgoData)
+        if (Owner(__instance) is ZombieWgoData zombie)
         {
-            deltaTime *= _multiplier.Value;
+            deltaTime *= ZombieOverrides.WalkSpeed(zombie) ?? (_enabled.Value ? _multiplier.Value : 1f);
         }
     }
 }

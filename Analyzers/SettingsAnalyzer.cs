@@ -112,6 +112,7 @@ public sealed class SettingsAnalyzer : DiagnosticAnalyzer
             case "Toggle":
             case "Key":
             case "Choice":
+            case "Button":
             case "Slider":
                 bool hasSection = TrySection(
                     context,

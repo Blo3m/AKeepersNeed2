@@ -1,6 +1,7 @@
 using System;
 using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Patching;
+using AKeepersNeed2.Shared.Zombies;
 using BepInEx.Configuration;
 using HarmonyLib;
 
@@ -27,6 +28,9 @@ internal sealed class ZombieGatherSpeedModule : HarmonyModule
     public override string Name => "ZombieGatherSpeed";
 
     protected override ConfigEntry<bool> EnabledFlag => _enabled;
+
+    // A zombie's own speed (Zombies tab editor) applies even while the global toggle is off.
+    protected override bool AlwaysPatched => true;
 
     public override void DeclareSettings(SettingsBuilder settings)
     {
@@ -59,14 +63,20 @@ internal sealed class ZombieGatherSpeedModule : HarmonyModule
         );
     }
 
-    private static void ScaleTime(ref float deltaTime)
+    private static void ScaleTime(ZombieHPActivity __instance, ref float deltaTime)
     {
-        deltaTime *= _multiplier.Value;
+        deltaTime *= Multiplier(__instance.Zombie);
+    }
+
+    /// <summary>The zombie's own speed if it has one, else the global one while it's on.</summary>
+    private static float Multiplier(ZombieWgoData zombie)
+    {
+        return ZombieOverrides.GatherSpeed(zombie) ?? (_enabled.Value ? _multiplier.Value : 1f);
     }
 
     private static bool RepeatHits(ZombieHPActivity __instance, Item tool, int deltaTick)
     {
-        if (_repeating || deltaTick <= 1)
+        if (_repeating || deltaTick <= 1 || Multiplier(__instance.Zombie) == 1f)
         {
             return true;
         }

@@ -57,6 +57,25 @@ internal sealed class ChoiceSettingRow : SettingRow
     public Func<bool> EnabledWhen { get; set; }
 }
 
+/// <summary>
+/// A "Label [Button]" row for a one-shot action. The menu asks for confirmation first
+/// (<see cref="ConfirmTitle"/> / <see cref="ConfirmMessage"/>) and runs <see cref="Action"/> on OK:
+/// every such action changes the save permanently.
+/// </summary>
+internal sealed class ButtonSettingRow : SettingRow
+{
+    public string ButtonText { get; set; }
+
+    public string ConfirmTitle { get; set; }
+
+    /// <summary>Built when pressed, so it can include current values.</summary>
+    public Func<string> ConfirmMessage { get; set; }
+
+    public Action Action { get; set; }
+
+    public Func<bool> EnabledWhen { get; set; }
+}
+
 /// <summary>A rebindable hotkey. Every key row also takes part in key-conflict checks.</summary>
 internal sealed class KeySettingRow : SettingRow
 {

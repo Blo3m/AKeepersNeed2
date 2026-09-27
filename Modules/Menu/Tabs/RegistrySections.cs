@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
-using AKeepersNeed2.Modules.Menu.Keybinds;
 using UnityEngine;
 
 namespace AKeepersNeed2.Modules.Menu.Tabs;
@@ -17,7 +16,7 @@ internal static class RegistrySections
     public static void Build(
         MenuPage page,
         MenuTab tab,
-        KeyRebinder rebinder,
+        AKNMenuWindow window,
         IReadOnlyDictionary<MenuSection, Action> handBuilt = null
     )
     {
@@ -35,12 +34,12 @@ internal static class RegistrySections
             content?.Invoke();
             foreach (SettingRow row in rows)
             {
-                BuildRow(page, rebinder, row);
+                BuildRow(page, window, row);
             }
         }
     }
 
-    private static void BuildRow(MenuPage page, KeyRebinder rebinder, SettingRow row)
+    private static void BuildRow(MenuPage page, AKNMenuWindow window, SettingRow row)
     {
         switch (row)
         {
@@ -78,10 +77,32 @@ internal static class RegistrySections
                     choice.EnabledWhen
                 );
                 break;
+            case ButtonSettingRow button:
+                page.ButtonRow(
+                    button.Label,
+                    button.ButtonText,
+                    () => window.Dialogs.ShowConfirm(
+                        button.ConfirmTitle,
+                        button.ConfirmMessage(),
+                        button.ButtonText,
+                        () =>
+                        {
+                            button.Action();
+                            page.Sync();
+                        }
+                    ),
+                    button.EnabledWhen
+                );
+                break;
             case KeySettingRow key:
                 RectTransform band = page.Band(30f, 6f);
                 page.GreyOutUnless(band, key.EnabledWhen);
-                page.AddSync(rebinder.BuildRow(band, key.Label, () => key.Entry, isUnbindable: key.IsUnbindable));
+                page.AddSync(window.Rebinder.BuildRow(
+                    band,
+                    key.Label,
+                    () => key.Entry,
+                    isUnbindable: key.IsUnbindable
+                ));
                 break;
             default:
                 Plugin.Logger.LogWarning($"[Menu] no row builder for {row.GetType().Name} ('{row.Label}').");

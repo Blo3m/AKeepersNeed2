@@ -55,7 +55,7 @@ internal sealed class SettingsTab : IMenuTab
             },
             [MenuSection.Interface] = () => _window.UiScale.BuildControl(_page.Band(28f, 8f)),
         };
-        RegistrySections.Build(_page, MenuTab.Settings, rebinder, handBuilt);
+        RegistrySections.Build(_page, MenuTab.Settings, _window, handBuilt);
 
         Refresh();
     }

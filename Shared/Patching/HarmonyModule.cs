@@ -10,10 +10,10 @@ namespace AKeepersNeed2.Shared.Patching;
 
 /// <summary>
 /// Base for gameplay modules that apply Harmony patches gated on a config flag.
-/// Per <c>Docs/ARCHITECTURE.md</c>: the patch is applied only while the module's
-/// <see cref="EnabledFlag"/> is on and removed when it's off, reacting to runtime
-/// toggles. Multiplier-style values are read live inside the patch body, so only the
-/// on/off flag drives patch/unpatch — changing a multiplier takes effect immediately.
+/// The patch is applied only while the module's <see cref="EnabledFlag"/> is on and removed
+/// when it's off, reacting to runtime toggles. Multiplier-style values are read live inside the
+/// patch body, so only the on/off flag drives patch/unpatch — changing a multiplier takes effect
+/// immediately.
 /// A module with several independent toggles lists them in <see cref="GateFlags"/>; the
 /// patches stay applied while any of them is on.
 /// </summary>
@@ -38,7 +38,14 @@ internal abstract class HarmonyModule : IModule, ISettingsDeclarer
         }
     }
 
-    private bool AnyFlagOn => GateFlags.Any(flag => flag.Value);
+    /// <summary>
+    /// True keeps the patches installed regardless of the flags. Only for modules whose effect
+    /// also comes from data outside the config (per-zombie overrides stored in the save), so the
+    /// patch body must check the flags itself.
+    /// </summary>
+    protected virtual bool AlwaysPatched => false;
+
+    private bool AnyFlagOn => AlwaysPatched || GateFlags.Any(flag => flag.Value);
 
     /// <summary>Binds the module's config (including <see cref="EnabledFlag"/>) and declares its menu rows.</summary>
     public abstract void DeclareSettings(SettingsBuilder settings);

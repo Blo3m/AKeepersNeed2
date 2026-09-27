@@ -41,7 +41,7 @@ internal sealed class ProgressionTab : IMenuTab
             [MenuSection.TechPoints] = BuildTechPoints,
             [MenuSection.Reputation] = BuildReputation,
         };
-        RegistrySections.Build(_page, MenuTab.Progression, _window.Rebinder, handBuilt);
+        RegistrySections.Build(_page, MenuTab.Progression, _window, handBuilt);
     }
 
     public void Refresh()

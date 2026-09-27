@@ -32,7 +32,7 @@ internal sealed class PlayerTab : IMenuTab
         {
             [MenuSection.Money] = BuildMoney,
         };
-        RegistrySections.Build(_page, MenuTab.Player, _window.Rebinder, handBuilt);
+        RegistrySections.Build(_page, MenuTab.Player, _window, handBuilt);
     }
 
     public void Refresh()

@@ -107,6 +107,33 @@ internal sealed class SettingsBuilder
         Add(row, section, order, label);
     }
 
+    /// <summary>
+    /// A one-shot action that permanently changes the save. The menu shows a confirm dialog
+    /// (<paramref name="confirmTitle"/>, <paramref name="confirmMessage"/>) and runs
+    /// <paramref name="action"/> only on OK.
+    /// </summary>
+    public void Button(
+        MenuSection section,
+        int order,
+        string label,
+        string buttonText,
+        string confirmTitle,
+        Func<string> confirmMessage,
+        Action action,
+        Func<bool> enabledWhen = null
+    )
+    {
+        var row = new ButtonSettingRow
+        {
+            ButtonText = buttonText,
+            ConfirmTitle = confirmTitle,
+            ConfirmMessage = confirmMessage,
+            Action = action,
+            EnabledWhen = enabledWhen,
+        };
+        Add(row, section, order, label);
+    }
+
     private static string SpaceWords(string name)
     {
         var spaced = new StringBuilder(name.Length + 4);

@@ -57,6 +57,13 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Zombie walk speed** — every zombie walks faster or slower (0.5–10×)
 - **Max mastery** — zombies work with enough mastery for every job at full output (not saved;
   the boosted value shows in the zombie window while on)
+- **Porter capacity** — porters carry 4–50 slots; applies to new porters, with a button to resize
+  existing ones (with confirmation)
+- **Zombie list** — every placed zombie with its face, job, station and zone; search by name and
+  filter by job. Open any zombie in the game's own zombie window
+- **Zombie editor** — expand a zombie to give it its own craft/gather/walk speed and porter
+  capacity, edit its talents and tech points, learn or remove perks (optionally hidden ones) and
+  ignore its perk cap. Changes are applied together after a confirmation
 
 **Garden**
 - **Growth speed** — crops grow faster (1–100×)

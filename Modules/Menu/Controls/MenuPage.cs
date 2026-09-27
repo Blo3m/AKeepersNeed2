@@ -27,11 +27,13 @@ internal sealed class MenuPage
     private bool _hasBands;
 
     /// <summary>
-    /// Wraps <paramref name="page"/> in a vertical <see cref="ScrollRect"/>. Rows go into its
-    /// content, which grows with every band, so pages taller than the window scroll.
+    /// Wraps <paramref name="area"/> in a vertical <see cref="ScrollRect"/>. Rows go into its
+    /// content, which grows with every band, so pages taller than the window scroll. Thin strips
+    /// above and below hold the up/down <see cref="ScrollHints"/>.
     /// </summary>
-    public MenuPage(RectTransform page)
+    public MenuPage(RectTransform area)
     {
+        RectTransform page = ScrollHints.SplitArea(area, out RectTransform up, out RectTransform down);
         var scroll = page.gameObject.AddComponent<ScrollRect>();
         scroll.horizontal = false;
         scroll.vertical = true;
@@ -54,6 +56,7 @@ internal sealed class MenuPage
         _content.offsetMin = new Vector2(MaskOverhang, 0f);
         _content.offsetMax = new Vector2(-MaskOverhang, 0f);
         scroll.content = _content;
+        _ = new ScrollHints(scroll, up, down);
     }
 
     /// <summary>Re-reads every row's value without firing its setter.</summary>
@@ -173,6 +176,33 @@ internal sealed class MenuPage
         });
         Sync();
         _syncs.Add(Sync);
+    }
+
+    /// <summary>
+    /// A row with the label on the left and a button on the right; greyed out like
+    /// <see cref="ToggleRow"/>.
+    /// </summary>
+    public void ButtonRow(string label, string buttonText, Action onClick, Func<bool> enabledWhen = null)
+    {
+        const float width = 150f;
+        RectTransform band = NewBand(30f, 8f);
+        GreyOutUnless(band, enabledWhen);
+        AddRowLabel(band, label, width + 8f);
+
+        LazyButton button = MenuUi.CreateButton(
+            "Button",
+            band,
+            buttonText,
+            Anchors.Right,
+            new Vector2(-width, 3f),
+            new Vector2(0f, -3f)
+        );
+        TextMeshProUGUI text = button.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (text != null)
+        {
+            text.fontSize = 12f;
+        }
+        button.onClick.AddListener(() => onClick());
     }
 
     /// <summary>A full-width slider with its value overlaid in the centre.</summary>

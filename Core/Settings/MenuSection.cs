@@ -59,6 +59,9 @@ internal enum MenuSection
     [Section(MenuTab.Zombies, "Mastery", 20)]
     ZombieMastery,
 
+    [Section(MenuTab.Zombies, "Porters", 30)]
+    ZombiePorters,
+
     [Section(MenuTab.Garden, "Growth", 10)]
     Growth,
 

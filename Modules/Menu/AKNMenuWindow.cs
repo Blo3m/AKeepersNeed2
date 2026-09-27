@@ -3,6 +3,7 @@ using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
 using AKeepersNeed2.Modules.Menu.Keybinds;
 using AKeepersNeed2.Modules.Menu.Tabs;
+using AKeepersNeed2.Modules.Menu.Tabs.Zombies;
 using AKeepersNeed2.Shared.Profiles;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
@@ -20,7 +21,7 @@ namespace AKeepersNeed2.Modules.Menu;
 /// between <see cref="IMenuTab"/> pages. It also owns the state tabs share: the
 /// <see cref="UiScalePreview"/>, the <see cref="KeyRebinder"/>, and the
 /// <see cref="MenuDialogHost"/>. Tabs re-read their values on open and whenever
-/// <see cref="ProfileStore"/> changes. See docs/UI.md.
+/// <see cref="ProfileStore"/> changes.
 /// </summary>
 internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
 {
@@ -85,12 +86,12 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new SettingsTab(this),
             new PlayerTab(this),
             new ProgressionTab(this),
-            new ConfigTab(MenuTab.Drops, _rebinder),
-            new ConfigTab(MenuTab.Crafting, _rebinder),
-            new ConfigTab(MenuTab.Zombies, _rebinder),
-            new ConfigTab(MenuTab.Garden, _rebinder),
+            new ConfigTab(MenuTab.Drops, this),
+            new ConfigTab(MenuTab.Crafting, this),
+            new ZombiesTab(this),
+            new ConfigTab(MenuTab.Garden, this),
             new ItemsTab(),
-            new ConfigTab(MenuTab.Map, _rebinder),
+            new ConfigTab(MenuTab.Map, this),
         };
 
         MenuUi.Stretch((RectTransform)transform);
