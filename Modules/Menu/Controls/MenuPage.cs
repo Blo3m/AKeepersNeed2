@@ -23,8 +23,8 @@ internal sealed class MenuPage
 
     private readonly RectTransform _content;
     private readonly List<Action> _syncs = new List<Action>();
-    private float _cursorTop;
-    private bool _hasBands;
+    private readonly List<BandEntry> _bands = new List<BandEntry>();
+    private BandGroup _group;
 
     /// <summary>
     /// Wraps <paramref name="area"/> in a vertical <see cref="ScrollRect"/>. Rows go into its
@@ -377,23 +377,131 @@ internal sealed class MenuPage
     }
 
     /// <summary>
-    /// Creates a full-width row of the given height at the current vertical cursor (relative
-    /// to the content's top) and advances the cursor past it, including a gap above. The first
-    /// row skips its gap: the window already leaves a margin under the title bar.
+    /// A full-width "▸ Title" button that folds a section. <paramref name="toggle"/> flips the
+    /// section; the arrow follows <paramref name="isOpen"/> on every <see cref="Sync"/>.
+    /// </summary>
+    public void FoldHeader(string title, Func<bool> isOpen, Action toggle)
+    {
+        RectTransform band = NewBand(28f, 12f);
+        LazyButton button = MenuUi.CreateButton("Fold", band, string.Empty, Anchors.Fill, Vector2.zero, Vector2.zero);
+        TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+        void SyncArrow()
+        {
+            if (label != null)
+            {
+                label.text = (isOpen() ? "▾ " : "▸ ") + title;
+            }
+        }
+        if (label != null)
+        {
+            label.fontSize = 13f;
+        }
+        button.onClick.AddListener(() =>
+        {
+            toggle();
+            SyncArrow();
+        });
+        SyncArrow();
+        _syncs.Add(SyncArrow);
+    }
+
+    /// <summary>
+    /// Starts collecting every band created until <see cref="EndGroup"/> into a group that can be
+    /// shown or hidden as one (a foldable section).
+    /// </summary>
+    public BandGroup BeginGroup()
+    {
+        _group = new BandGroup();
+        return _group;
+    }
+
+    public void EndGroup()
+    {
+        _group = null;
+    }
+
+    /// <summary>Shows or hides a group's bands; the rows below move up or down to fit.</summary>
+    public void SetGroupVisible(BandGroup group, bool visible)
+    {
+        foreach (BandEntry band in _bands)
+        {
+            if (group.Contains(band.Rect))
+            {
+                band.Visible = visible;
+                band.Rect.gameObject.SetActive(visible);
+            }
+        }
+        Relayout();
+    }
+
+    /// <summary>Changes a band's height (e.g. a list that grew); the rows below move to fit.</summary>
+    public void SetBandHeight(RectTransform rect, float height)
+    {
+        foreach (BandEntry band in _bands)
+        {
+            if (band.Rect == rect)
+            {
+                band.Height = height;
+            }
+        }
+        Relayout();
+    }
+
+    /// <summary>
+    /// Creates a full-width row of the given height below the previous one, with a gap above.
+    /// The first visible row skips its gap: the window already leaves a margin under the title bar.
     /// </summary>
     private RectTransform NewBand(float height, float topGap)
     {
-        if (_hasBands)
+        RectTransform rect = MenuUi.CreateRect("Band", _content);
+        _bands.Add(new BandEntry { Rect = rect, Height = height, Gap = topGap, Visible = true });
+        _group?.Add(rect);
+        Relayout();
+        return rect;
+    }
+
+    private void Relayout()
+    {
+        float cursor = 0f;
+        bool first = true;
+        foreach (BandEntry band in _bands)
         {
-            _cursorTop -= topGap;
+            if (!band.Visible)
+            {
+                continue;
+            }
+            if (!first)
+            {
+                cursor -= band.Gap;
+            }
+            first = false;
+            MenuUi.SetRect(band.Rect, Anchors.Top, new Vector2(0f, cursor - band.Height), new Vector2(0f, cursor));
+            cursor -= band.Height;
         }
-        _hasBands = true;
+        _content.sizeDelta = new Vector2(-2f * MaskOverhang, -cursor + BottomPadding);
+    }
 
-        RectTransform band = MenuUi.CreateRect("Band", _content);
-        MenuUi.SetRect(band, Anchors.Top, new Vector2(0f, _cursorTop - height), new Vector2(0f, _cursorTop));
+    private sealed class BandEntry
+    {
+        public RectTransform Rect;
+        public float Height;
+        public float Gap;
+        public bool Visible;
+    }
+}
 
-        _cursorTop -= height;
-        _content.sizeDelta = new Vector2(-2f * MaskOverhang, -_cursorTop + BottomPadding);
-        return band;
+/// <summary>A set of <see cref="MenuPage"/> bands shown or hidden together.</summary>
+internal sealed class BandGroup
+{
+    private readonly HashSet<RectTransform> _bands = new HashSet<RectTransform>();
+
+    public void Add(RectTransform band)
+    {
+        _bands.Add(band);
+    }
+
+    public bool Contains(RectTransform band)
+    {
+        return _bands.Contains(band);
     }
 }

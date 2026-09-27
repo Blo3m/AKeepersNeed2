@@ -17,11 +17,16 @@ internal static class RegistrySections
         MenuPage page,
         MenuTab tab,
         AKNMenuWindow window,
-        IReadOnlyDictionary<MenuSection, Action> handBuilt = null
+        IReadOnlyDictionary<MenuSection, Action> handBuilt = null,
+        ICollection<MenuSection> only = null
     )
     {
         foreach (MenuSection section in SettingsRegistry.SectionsIn(tab))
         {
+            if (only != null && !only.Contains(section))
+            {
+                continue;
+            }
             Action content = null;
             handBuilt?.TryGetValue(section, out content);
             List<SettingRow> rows = SettingsRegistry.RowsIn(section);

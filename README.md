@@ -25,6 +25,7 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Movement speed** — walk faster or slower (0.5–5×), always or as a sprint: hold or toggle a
   key (unbound by default). Optionally ignore the game's slowdown while attacking
 - **Infinite durability** — tools and items used up by durability in crafts never wear down
+- **Inventory slots** — set how many slots your inventory has (1–200, with confirmation)
 - **Money and happiness** — view and set your money and happiness (asks for confirmation, since
   it changes your save)
 - **Trade income** — vendors pay more for what you sell (1–50×), optionally even when they
@@ -37,11 +38,19 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Freeze time** — stop the clock (it still runs while you sleep)
 - **Skip time** — jump forward to the next sunrise, noon, sunset or midnight (with confirmation);
   time events fire as if the time had passed
+- **Zone quality** — set the quality of the graveyard, church and other zones, and the town (with
+  confirmation; milestone rewards pay out as if earned)
 
-**Progression**
+**Progression** (foldable sections)
 - **Tech points** — view and set your red, green and blue tech points (with confirmation)
 - **Reputation** — pick an NPC and view or set your reputation with them (with confirmation)
 - **Reputation multiplier** — multiply reputation gained with NPCs and districts (1–20×)
+- **Tech** — search and filter every tech by tab; unlock one, a whole tab or everything
+  (optionally including hidden story and reputation techs), with confirmation
+- **Recipes** — unlock all crafting recipes, buildings, town buildings or alchemy formulas (with
+  confirmation)
+- **Quests** — every active quest with its giver, hand-in and description; give its hand-in items,
+  or force-complete it (with a strong warning)
 
 **Drops**
 - **Resource drops** — multiply loot from destroyed/harvested world objects

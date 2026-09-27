@@ -8,16 +8,28 @@ using UnityEngine;
 namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
-/// A "Label [value] [Set]" row for a live <see cref="PlayerData"/> value. The field shows the
-/// current value on every sync (blank while no game is loaded). Set (or Enter) asks for
-/// confirmation, since the value is written into the save, then writes it and toasts the result.
+/// A "Label [value] [Set]" row for a live save value. The field shows the current value on every
+/// sync (blank while no game is loaded). Set (or Enter) asks for confirmation, since the value is
+/// written into the save, then writes it and toasts the result.
 /// </summary>
 internal static class ValueRow
 {
+    /// <summary>Optional parts of a value row.</summary>
+    internal sealed class Options
+    {
+        /// <summary>Overrides the label in the toast/log (the reputation row names the selected NPC).</summary>
+        public Func<string> ToastLabel;
+
+        /// <summary>Returns why a value can't be set (shown as a toast), or null when it's fine.</summary>
+        public Func<PlayerData, int, string> Validate;
+
+        /// <summary>An extra sentence for the confirm dialog (e.g. side effects).</summary>
+        public string Warning;
+    }
+
     /// <summary>
     /// Adds the row to <paramref name="page"/>. <paramref name="get"/> returning null means there's
-    /// nothing to set right now. <paramref name="toastLabel"/> overrides <paramref name="label"/> in
-    /// the toast/log when the row's target changes (the reputation row names the selected NPC).
+    /// nothing to set right now.
     /// </summary>
     public static void Add(
         MenuPage page,
@@ -28,11 +40,26 @@ internal static class ValueRow
         Func<string> toastLabel = null
     )
     {
-        RectTransform band = page.Band(30f, 8f);
+        page.AddSync(Build(page.Band(30f, 8f), dialogs, label, get, set, new Options { ToastLabel = toastLabel }));
+    }
+
+    /// <summary>Builds the row into <paramref name="band"/>; returns its re-read action.</summary>
+    public static Action Build(
+        RectTransform band,
+        MenuDialogHost dialogs,
+        string label,
+        Func<PlayerData, int?> get,
+        Action<PlayerData, int> set,
+        Options options = null
+    )
+    {
+        options = options ?? new Options();
 
         TextMeshProUGUI name = MenuUi.CreateText("Name", band, 13f, TextAlignmentOptions.Left);
         MenuUi.ApplyLabelText(name);
         MenuUi.SetRect(name.rectTransform, Anchors.Fill, Vector2.zero, new Vector2(-124f, 0f));
+        name.textWrappingMode = TextWrappingModes.NoWrap;
+        name.overflowMode = TextOverflowModes.Ellipsis;
         name.text = label;
 
         TMP_InputField field = MenuUi.CreateInputField(
@@ -69,11 +96,11 @@ internal static class ValueRow
 
         void Apply()
         {
-            string target = toastLabel?.Invoke() ?? label;
+            string target = options.ToastLabel?.Invoke() ?? label;
             PlayerData player = MainGame.PlayerData;
             if (player == null)
             {
-                Plugin.Logger.LogWarning($"[Player] can't set {target} — no active game/player.");
+                Plugin.Logger.LogWarning($"[Menu] can't set {target} — no active game/player.");
                 Toast.Show("No active game");
                 return;
             }
@@ -88,11 +115,24 @@ internal static class ValueRow
                 Sync();
                 return;
             }
+            string problem = options.Validate?.Invoke(player, value);
+            if (problem != null)
+            {
+                Toast.Show(problem);
+                Sync();
+                return;
+            }
+            string message = $"{target} will be set to {value} in your current save. This is permanent.";
+            if (!string.IsNullOrEmpty(options.Warning))
+            {
+                message += "\n" + options.Warning;
+            }
             dialogs.ShowConfirm(
                 $"Set {target}?",
-                $"{target} will be set to {value} in your current save. This is permanent.",
+                message,
                 "Set",
-                () => Write(target, value)
+                () => Write(target, value),
+                string.IsNullOrEmpty(options.Warning) ? 132f : 164f
             );
         }
 
@@ -105,13 +145,14 @@ internal static class ValueRow
                 return;
             }
             set(player, value);
-            Plugin.Logger.LogInfo($"[Player] set {target} to {value}.");
+            Plugin.Logger.LogInfo($"[Menu] set {target} to {value}.");
             Toast.Show($"{target} set to {value}");
             Sync();
         }
 
         button.onClick.AddListener(Apply);
         field.onSubmit.AddListener(_ => Apply());
-        page.AddSync(Sync);
+        Sync();
+        return Sync;
     }
 }

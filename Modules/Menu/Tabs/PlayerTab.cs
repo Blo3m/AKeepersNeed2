@@ -15,6 +15,8 @@ namespace AKeepersNeed2.Modules.Menu.Tabs;
 /// </summary>
 internal sealed class PlayerTab : IMenuTab
 {
+    private const int MaxInventorySlots = 200;
+
     private readonly AKNMenuWindow _window;
     private MenuPage _page;
 
@@ -30,6 +32,7 @@ internal sealed class PlayerTab : IMenuTab
         _page = new MenuPage(content);
         var handBuilt = new Dictionary<MenuSection, Action>
         {
+            [MenuSection.Inventory] = BuildInventory,
             [MenuSection.Money] = BuildMoney,
         };
         RegistrySections.Build(_page, MenuTab.Player, _window, handBuilt);
@@ -38,6 +41,44 @@ internal sealed class PlayerTab : IMenuTab
     public void Refresh()
     {
         _page?.Sync();
+    }
+
+    // IncreaseInventorySize/ReduceInventorySize are the game's own; Reduce refuses to drop below
+    // the slots in use, which the validation checks first so the player gets a reason.
+    private void BuildInventory()
+    {
+        _page.AddSync(ValueRow.Build(
+            _page.Band(30f, 8f),
+            _window.Dialogs,
+            "Inventory Slots",
+            player => player.Inventory?.Data?.InventorySize,
+            (player, value) =>
+            {
+                int change = value - player.Inventory.Data.InventorySize;
+                if (change > 0)
+                {
+                    player.IncreaseInventorySize(change);
+                }
+                else if (change < 0)
+                {
+                    player.ReduceInventorySize(-change);
+                }
+            },
+            new ValueRow.Options
+            {
+                Validate = (player, value) =>
+                {
+                    if (value < 1 || value > MaxInventorySlots)
+                    {
+                        return $"Slots must be 1–{MaxInventorySlots}";
+                    }
+                    int used = player.Inventory.Data.InventoryFillSize;
+                    return value < used
+                        ? $"{used} slots are in use"
+                        : null;
+                },
+            }
+        ));
     }
 
     private void BuildMoney()

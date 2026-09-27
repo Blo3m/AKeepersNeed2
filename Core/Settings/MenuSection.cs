@@ -32,11 +32,17 @@ internal enum MenuSection
     [Section(MenuTab.Player, "Tools", 50)]
     Tools,
 
+    [Section(MenuTab.Player, "Inventory", 55)]
+    Inventory,
+
     [Section(MenuTab.Player, "Money", 60)]
     Money,
 
     [Section(MenuTab.World, "Time", 10)]
     Time,
+
+    [Section(MenuTab.World, "Quality", 20)]
+    ZoneQuality,
 
     [Section(MenuTab.Progression, "Tech Points", 10)]
     TechPoints,
