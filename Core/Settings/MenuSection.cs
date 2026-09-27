@@ -35,6 +35,9 @@ internal enum MenuSection
     [Section(MenuTab.Player, "Money", 60)]
     Money,
 
+    [Section(MenuTab.World, "Time", 10)]
+    Time,
+
     [Section(MenuTab.Progression, "Tech Points", 10)]
     TechPoints,
 
@@ -64,6 +67,9 @@ internal enum MenuSection
 
     [Section(MenuTab.Garden, "Growth", 10)]
     Growth,
+
+    [Section(MenuTab.Fishing, "Fishing", 10)]
+    Fishing,
 
     [Section(MenuTab.Map, "Map", 10)]
     Map,

@@ -5,11 +5,13 @@ internal enum MenuTab
 {
     Settings,
     Player,
+    World,
     Progression,
     Drops,
     Crafting,
     Zombies,
     Garden,
+    Fishing,
     Items,
     Map,
 }

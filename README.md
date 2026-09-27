@@ -31,6 +31,13 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
   can't afford it
 - **Other income** — multiply money from everything except trading, like quests and sermons (1–50×)
 
+**World**
+- **Day length** — how many real minutes a game day lasts (1–60, vanilla 5). Only the clock
+  changes; crafts and crops keep their speed
+- **Freeze time** — stop the clock (it still runs while you sleep)
+- **Skip time** — jump forward to the next sunrise, noon, sunset or midnight (with confirmation);
+  time events fire as if the time had passed
+
 **Progression**
 - **Tech points** — view and set your red, green and blue tech points (with confirmation)
 - **Reputation** — pick an NPC and view or set your reputation with them (with confirmation)
@@ -69,6 +76,15 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Growth speed** — crops grow faster (1–100×)
 - **Instant grow** — crops finish growing right after planting
 - **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
+
+**Fishing**
+- **Instant bite** — fish bite as soon as you cast
+- **Auto-hook** — fish are hooked for you when they bite
+- **Auto-win** — a hooked fish is caught at once, no fight
+- **No line snap** — the line never breaks
+- **No escape** — a hooked fish can't get away
+- **Extra fish** — each catch gives more fish (1–50)
+- **Infinite stock** — fishing spots never run out
 
 **Items**
 - **Item adder** — search or filter every item by category and add any amount to your
