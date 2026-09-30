@@ -7,7 +7,9 @@ A [BepInEx](https://github.com/BepInEx/BepInEx) mod for **Graveyard Keeper 2**.
 Everything is configured in-game through a native-styled menu with sideways-scrollable tabs.
 The menu hotkey (default **F1**) opens and closes it, and Esc also closes it. Esc first
 backs out of whatever you're in the middle of: it closes an open dialog, leaves a text field,
-and while rebinding a key it unbinds that key. Pages taller than the window scroll vertically. When the mod is installed, the main menu shows
+and while rebinding a key it unbinds that key. Pages taller than the window scroll vertically.
+Drag the menu by its title bar to move it; Settings → Menu Position → Reset puts it back on the
+right. When the mod is installed, the main menu shows
 "A Keepers Need 2 loaded (v…)" under the game's version.
 
 **Player**
@@ -127,7 +129,8 @@ Switching takes effect immediately.
 
 ### Config files
 
-- `BepInEx/config/AKeepersNeed2.cfg` — global settings: menu hotkey, UI scale, profile keys,
+- `BepInEx/config/AKeepersNeed2.cfg` — global settings: menu hotkey, UI scale, menu position,
+  profile keys,
   and the active profile.
 - `BepInEx/config/AKeepersNeed2/profiles/<name>.cfg` — one readable file per profile. Copy
   them to share or back up profiles; any `.cfg` dropped in this folder is picked up on the

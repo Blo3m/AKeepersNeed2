@@ -25,8 +25,19 @@ internal sealed class MenuModule : IModule, IUpdatable, ISettingsDeclarer
     /// <summary>Menu size multiplier, 0.5 .. 3.0. Also scales toasts.</summary>
     internal static ConfigEntry<float> UiScale { get; private set; }
 
+    /// <summary>
+    /// Where the panel was dragged to: its offset from the right-docked default, in canvas units.
+    /// Global, since it depends on the screen rather than the gameplay profile.
+    /// </summary>
+    internal static ConfigEntry<float> PanelX { get; private set; }
+
+    internal static ConfigEntry<float> PanelY { get; private set; }
+
     public void DeclareSettings(SettingsBuilder settings)
     {
+        PanelX = settings.Global("Menu", "PanelX", 0f, "Horizontal offset of the dragged menu (0 = right edge).");
+        PanelY = settings.Global("Menu", "PanelY", 0f, "Vertical offset of the dragged menu (0 = centred).");
+        settings.Button(MenuSection.Interface, 10, "Menu Position", "Reset", ResetPosition);
         _hotkey = settings.Global("Menu", "Hotkey", KeyCode.F1, "Key that toggles the mod menu.");
         UiScale = settings.Global(
             "Menu",
@@ -70,6 +81,13 @@ internal sealed class MenuModule : IModule, IUpdatable, ISettingsDeclarer
     private static void OnUiScaleChanged(object sender, EventArgs e)
     {
         Toast.Scale = UiScale.Value;
+    }
+
+    private void ResetPosition()
+    {
+        PanelX.Value = 0f;
+        PanelY.Value = 0f;
+        _window?.ApplySavedPosition();
     }
 
     private void Toggle()

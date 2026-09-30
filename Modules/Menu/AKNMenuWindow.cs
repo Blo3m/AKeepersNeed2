@@ -100,6 +100,9 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         _panelRect = MenuChrome.BuildPanel(transform);
         _uiScale = new UiScalePreview(transform, _panelRect);
         _title = MenuChrome.BuildHeader(_panelRect, MenuTitle);
+        var mover = _title.rectTransform.parent.gameObject.AddComponent<DragMover>();
+        mover.Target = _panelRect;
+        mover.Released += SavePosition;
 
         BuildContent();
         BuildFooter();
@@ -107,6 +110,28 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         SelectTab(1);
 
         ProfileStore.Changed += RefreshAll;
+        MenuModule.UiScale.SettingChanged += OnUiScaleChanged;
+    }
+
+    /// <summary>
+    /// Moves the panel to its saved drag offset, kept on screen for the current resolution and UI
+    /// scale. The saved value itself only changes when the panel is dragged or reset.
+    /// </summary>
+    public void ApplySavedPosition()
+    {
+        _panelRect.anchoredPosition = new Vector2(MenuModule.PanelX.Value, MenuModule.PanelY.Value);
+        DragMover.ClampToParent(_panelRect);
+    }
+
+    private void SavePosition()
+    {
+        MenuModule.PanelX.Value = _panelRect.anchoredPosition.x;
+        MenuModule.PanelY.Value = _panelRect.anchoredPosition.y;
+    }
+
+    private void OnUiScaleChanged(object sender, EventArgs e)
+    {
+        ApplySavedPosition();
     }
 
     private void RefreshAll()
@@ -167,6 +192,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     {
         _tabBar?.Dispose();
         ProfileStore.Changed -= RefreshAll;
+        MenuModule.UiScale.SettingChanged -= OnUiScaleChanged;
     }
 
     /// <summary>
@@ -234,6 +260,9 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         RefreshAll();
         _uiScale.ApplySaved();
         base.Open(data);
+        // After Open, so the window is laid out at the current resolution before clamping.
+        Canvas.ForceUpdateCanvases();
+        ApplySavedPosition();
     }
 
     // LazyWindow.PrintTips assumes a tips widget exists; ours has none, so guard.
