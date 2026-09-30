@@ -21,8 +21,6 @@ internal sealed class BookmarkMarkerLayer : MonoBehaviour
     private const float MarkerSize = 10f;
     private const float LabelGap = 6f;
 
-    private static string _worldSceneId;
-
     private readonly List<BookmarkMarker> _markers = new List<BookmarkMarker>();
 
     private RectTransform _mapRect;
@@ -66,14 +64,11 @@ internal sealed class BookmarkMarkerLayer : MonoBehaviour
         {
             return;
         }
-        if (MapProjection.IsPlayerInWorld())
-        {
-            _worldSceneId = player.currentGameSceneId;
-        }
+        string worldScene = MapProjection.WorldSceneId;
         Vector2 mapSize = _mapRect.sizeDelta;
         foreach (Bookmark bookmark in BookmarkStore.All)
         {
-            if (_worldSceneId != null && bookmark.Scene != _worldSceneId)
+            if (worldScene != null && bookmark.Scene != worldScene)
             {
                 continue;
             }

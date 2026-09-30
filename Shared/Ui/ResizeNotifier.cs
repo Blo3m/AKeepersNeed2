@@ -1,7 +1,7 @@
 using System;
 using UnityEngine;
 
-namespace AKeepersNeed2.Modules.Menu.Controls;
+namespace AKeepersNeed2.Shared.Ui;
 
 /// <summary>
 /// Fires <see cref="Resized"/> whenever the GameObject's RectTransform changes size, including

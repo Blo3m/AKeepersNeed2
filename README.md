@@ -118,6 +118,10 @@ right. When the mod is installed, the main menu shows
   - **Shift-click NPC to teleport** — shift-click a face to teleport next to that NPC
 - **Shift-click map teleport** — shift-click anywhere on the map to teleport to the nearest
   walkable spot (outdoors only)
+- **Map markers** — mark resources on the map by what they give (wood, stone, iron ore, berries,
+  mushrooms …), plus chests, stockpiles, NPCs with something to say (gold when a quest is ready to
+  hand in), fishing spots and doors. Pick them in the "Markers" legend on the map page; hover a
+  marker for its name. Marker size is adjustable
 - **Teleport bookmarks** — save where you stand under a name and teleport back any time, also
   into other areas and interiors; rename, delete, and give each one its own hotkey. Bookmarks
   belong to the active profile

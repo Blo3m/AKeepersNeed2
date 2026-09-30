@@ -153,6 +153,26 @@ internal static class MapProjection
             && TryWorldToMap(MainGame.PlayerData.position.Value, Vector2.one, out _);
     }
 
+    private static string _worldSceneId;
+
+    /// <summary>
+    /// The scene the map shows: the player's scene while they're out in the world, otherwise the
+    /// last one seen that way, so the map still shows the world's things when opened indoors. Null
+    /// until the player has been outdoors once this session. Other scenes (the prison, sewers) can
+    /// have coordinates inside the map's bounds, so things placed on the map filter by this.
+    /// </summary>
+    public static string WorldSceneId
+    {
+        get
+        {
+            if (IsPlayerInWorld())
+            {
+                _worldSceneId = MainGame.PlayerData.currentGameSceneId;
+            }
+            return _worldSceneId;
+        }
+    }
+
     // The game feeds the quaternion's x component (not an Euler angle) into this; match it
     // exactly so our points line up with the player icon and milestones.
     private static float TiltTangent()

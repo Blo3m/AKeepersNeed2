@@ -1,9 +1,8 @@
-using AKeepersNeed2.Shared.Ui;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace AKeepersNeed2.Modules.Menu.Controls;
+namespace AKeepersNeed2.Shared.Ui;
 
 /// <summary>
 /// Up/down "there's more" hints for a vertical scroll view, the vertical twin of the tab bar's
