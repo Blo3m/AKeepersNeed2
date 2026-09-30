@@ -41,6 +41,9 @@ internal enum MenuSection
     [Section(MenuTab.World, "Time", 10)]
     Time,
 
+    [Section(MenuTab.World, "Weather", 15)]
+    Weather,
+
     [Section(MenuTab.World, "Quality", 20)]
     ZoneQuality,
 

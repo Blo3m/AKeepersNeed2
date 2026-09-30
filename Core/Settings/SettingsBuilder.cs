@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using BepInEx.Configuration;
 using UnityEngine;
@@ -108,6 +109,58 @@ internal sealed class SettingsBuilder
     }
 
     /// <summary>
+    /// A cycler over names only known at runtime (e.g. read from the loaded game).
+    /// <paramref name="values"/> is re-read every time the row draws or steps. While the stored
+    /// value isn't in the list, the row shows the list's first entry (see <see cref="Resolve"/>);
+    /// while the list is empty it shows "-".
+    /// </summary>
+    public void Choice(
+        MenuSection section,
+        int order,
+        string label,
+        ConfigEntry<string> entry,
+        Func<IList<string>> values,
+        Func<bool> enabledWhen = null
+    )
+    {
+        var row = new ChoiceSettingRow
+        {
+            Current = () =>
+            {
+                string value = Resolve(entry.Value, values());
+                return value.Length == 0
+                    ? "-"
+                    : SpaceWords(value);
+            },
+            Step = delta =>
+            {
+                IList<string> list = values();
+                if (list.Count == 0)
+                {
+                    return;
+                }
+                int index = Math.Max(0, list.IndexOf(entry.Value));
+                entry.Value = list[((index + delta) % list.Count + list.Count) % list.Count];
+            },
+            EnabledWhen = enabledWhen,
+        };
+        Add(row, section, order, label);
+    }
+
+    /// <summary>
+    /// What a runtime <see cref="Choice"/> row shows as selected: <paramref name="value"/> when
+    /// <paramref name="list"/> has it (or is empty), otherwise the list's first entry.
+    /// </summary>
+    public static string Resolve(string value, IList<string> list)
+    {
+        if (list.Count == 0 || list.Contains(value))
+        {
+            return value ?? string.Empty;
+        }
+        return list[0];
+    }
+
+    /// <summary>
     /// A one-shot action that permanently changes the save. The menu shows a confirm dialog
     /// (<paramref name="confirmTitle"/>, <paramref name="confirmMessage"/>) and runs
     /// <paramref name="action"/> only on OK.
@@ -134,12 +187,35 @@ internal sealed class SettingsBuilder
         Add(row, section, order, label);
     }
 
-    private static string SpaceWords(string name)
+    /// <summary>
+    /// A one-shot action that leaves no lasting change in the save, so it runs at once with no
+    /// confirm dialog.
+    /// </summary>
+    public void Button(
+        MenuSection section,
+        int order,
+        string label,
+        string buttonText,
+        Action action,
+        Func<bool> enabledWhen = null
+    )
+    {
+        var row = new ButtonSettingRow { ButtonText = buttonText, Action = action, EnabledWhen = enabledWhen };
+        Add(row, section, order, label);
+    }
+
+    /// <summary>A code name as menu text: "HoldKey" → "Hold Key", "Rain_Heavy" → "Rain Heavy".</summary>
+    public static string SpaceWords(string name)
     {
         var spaced = new StringBuilder(name.Length + 4);
         for (int i = 0; i < name.Length; i++)
         {
-            if (i > 0 && char.IsUpper(name[i]))
+            if (name[i] == '_')
+            {
+                spaced.Append(' ');
+                continue;
+            }
+            if (i > 0 && char.IsUpper(name[i]) && name[i - 1] != '_')
             {
                 spaced.Append(' ');
             }

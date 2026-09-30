@@ -83,19 +83,28 @@ internal static class RegistrySections
                 );
                 break;
             case ButtonSettingRow button:
+                Action run = () =>
+                {
+                    button.Action();
+                    page.Sync();
+                };
                 page.ButtonRow(
                     button.Label,
                     button.ButtonText,
-                    () => window.Dialogs.ShowConfirm(
-                        button.ConfirmTitle,
-                        button.ConfirmMessage(),
-                        button.ButtonText,
-                        () =>
+                    () =>
+                    {
+                        if (button.ConfirmTitle == null)
                         {
-                            button.Action();
-                            page.Sync();
+                            run();
+                            return;
                         }
-                    ),
+                        window.Dialogs.ShowConfirm(
+                            button.ConfirmTitle,
+                            button.ConfirmMessage(),
+                            button.ButtonText,
+                            run
+                        );
+                    },
                     button.EnabledWhen
                 );
                 break;

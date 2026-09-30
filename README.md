@@ -38,6 +38,10 @@ and while rebinding a key it unbinds that key. Pages taller than the window scro
 - **Freeze time** — stop the clock (it still runs while you sleep)
 - **Skip time** — jump forward to the next sunrise, noon, sunset or midnight (with confirmation);
   time events fire as if the time had passed
+- **Weather** — pick a weather (clear, wind, rain from light to storm, mist) and set it; shows once
+  the menu closes
+- **Lock weather** — stop the weather from changing on its own; story weather still plays, then
+  your weather comes back
 - **Zone quality** — set the quality of the graveyard, church and other zones, and the town (with
   confirmation; milestone rewards pay out as if earned)
 

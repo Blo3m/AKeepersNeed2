@@ -58,14 +58,15 @@ internal sealed class ChoiceSettingRow : SettingRow
 }
 
 /// <summary>
-/// A "Label [Button]" row for a one-shot action. The menu asks for confirmation first
-/// (<see cref="ConfirmTitle"/> / <see cref="ConfirmMessage"/>) and runs <see cref="Action"/> on OK:
-/// every such action changes the save permanently.
+/// A "Label [Button]" row for a one-shot action. An action that changes the save permanently has a
+/// <see cref="ConfirmTitle"/>: the menu asks for confirmation first (<see cref="ConfirmTitle"/> /
+/// <see cref="ConfirmMessage"/>) and runs <see cref="Action"/> on OK. Without one it runs at once.
 /// </summary>
 internal sealed class ButtonSettingRow : SettingRow
 {
     public string ButtonText { get; set; }
 
+    /// <summary>Null for an action that leaves no lasting change, which then skips the confirm.</summary>
     public string ConfirmTitle { get; set; }
 
     /// <summary>Built when pressed, so it can include current values.</summary>
