@@ -3,21 +3,26 @@ using UnityEngine;
 namespace AKeepersNeed2.Shared.Movement;
 
 /// <summary>
-/// Teleport target for <c>PlayerController.Teleport</c> that is just a position in the
-/// player's current scene, so the game's same-scene path (optional fade, move, camera snap)
-/// runs. It keeps the current lighting preset: the game applies the teleport's preset on
-/// arrival, and the base default ("outdoor") would relight interiors.
+/// Teleport target for <c>PlayerController.Teleport</c> that is just a position, in the player's
+/// current scene or another one. The same scene takes the game's same-scene path (optional fade,
+/// move, camera snap); another scene makes the game unload this one, show its loading screen and
+/// load that one. The game applies the teleport's lighting preset on arrival, and the base default
+/// ("outdoor") would relight interiors, so it defaults to the current preset.
 /// </summary>
 internal sealed class PositionTeleportData : TeleportDataBase
 {
     private const string FallbackPreset = "outdoor";
 
     private readonly Vector3 _position;
+    private readonly string _sceneId;
 
-    public PositionTeleportData(Vector3 position, bool fade = true)
-        : base(CurrentPreset(), donNotFade: !fade)
+    /// <param name="sceneId">Destination scene; null for the current one.</param>
+    /// <param name="preset">Lighting preset to arrive with; null or empty keeps the current one.</param>
+    public PositionTeleportData(Vector3 position, bool fade = true, string sceneId = null, string preset = null)
+        : base(string.IsNullOrEmpty(preset) ? CurrentPreset() : preset, donNotFade: !fade)
     {
         _position = position;
+        _sceneId = sceneId;
     }
 
     public override string GetDestinationId()
@@ -27,7 +32,7 @@ internal sealed class PositionTeleportData : TeleportDataBase
 
     public override GameSceneData GetDestinationSceneData()
     {
-        return MainGame.WorldData.GetGameSceneDataById(MainGame.PlayerData.currentGameSceneId);
+        return MainGame.WorldData.GetGameSceneDataById(_sceneId ?? MainGame.PlayerData.currentGameSceneId);
     }
 
     public override Vector3 GetPosition()

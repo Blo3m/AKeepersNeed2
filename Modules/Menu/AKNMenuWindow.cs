@@ -93,7 +93,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new ConfigTab(MenuTab.Garden, this),
             new ConfigTab(MenuTab.Fishing, this),
             new ItemsTab(this),
-            new ConfigTab(MenuTab.Map, this),
+            new MapTab(this),
         };
 
         MenuUi.Stretch((RectTransform)transform);

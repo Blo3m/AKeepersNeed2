@@ -118,6 +118,11 @@ right. When the mod is installed, the main menu shows
   - **Shift-click NPC to teleport** — shift-click a face to teleport next to that NPC
 - **Shift-click map teleport** — shift-click anywhere on the map to teleport to the nearest
   walkable spot (outdoors only)
+- **Teleport bookmarks** — save where you stand under a name and teleport back any time, also
+  into other areas and interiors; rename, delete, and give each one its own hotkey. Bookmarks
+  belong to the active profile
+  - **Show bookmarks on map** — outdoor bookmarks appear as gold diamonds on the map; hover for
+    the name, shift-click to teleport
 
 ### Profiles
 

@@ -66,6 +66,9 @@ internal sealed class KeyRebinder
         bool isUnbindable = false
     )
     {
+        // Rows of rebuilt lists (bookmarks) are destroyed with their list; Unity's null check sees it.
+        _rows.RemoveAll(existing => existing.Label == null && existing != _listening);
+
         TextMeshProUGUI name = MenuUi.CreateText("Label", band, 13f, TextAlignmentOptions.Left);
         MenuUi.ApplyLabelText(name);
         MenuUi.SetRect(name.rectTransform, Anchors.Fill, new Vector2(0f, 0f), new Vector2(-114f, 0f));

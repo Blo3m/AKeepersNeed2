@@ -91,4 +91,7 @@ internal enum MenuSection
 
     [Section(MenuTab.Map, "Map", 10)]
     Map,
+
+    [Section(MenuTab.Map, "Bookmarks", 20)]
+    Bookmarks,
 }
