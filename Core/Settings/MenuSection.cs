@@ -80,6 +80,15 @@ internal enum MenuSection
     [Section(MenuTab.Fishing, "Fishing", 10)]
     Fishing,
 
+    [Section(MenuTab.Items, "Player Stacks", 10)]
+    PlayerStacks,
+
+    [Section(MenuTab.Items, "Chest & Station Stacks", 20)]
+    ChestStacks,
+
+    [Section(MenuTab.Items, "Zombie Stacks", 30)]
+    ZombieStacks,
+
     [Section(MenuTab.Map, "Map", 10)]
     Map,
 }

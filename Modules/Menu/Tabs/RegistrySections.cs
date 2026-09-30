@@ -67,7 +67,9 @@ internal static class RegistrySections
                     slider.Max,
                     slider.Format,
                     () => slider.Entry.Value,
-                    value => slider.Entry.Value = value
+                    value => slider.Entry.Value = value,
+                    slider.EnabledWhen,
+                    slider.VisibleWhen
                 );
                 break;
             case ChoiceSettingRow choice:

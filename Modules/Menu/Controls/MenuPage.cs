@@ -205,12 +205,26 @@ internal sealed class MenuPage
         button.onClick.AddListener(() => onClick());
     }
 
-    /// <summary>A full-width slider with its value overlaid in the centre.</summary>
-    public void SliderRow(float min, float max, string format, Func<float> get, Action<float> set)
+    /// <summary>
+    /// A full-width slider with its value overlaid in the centre, greyed out while
+    /// <paramref name="enabledWhen"/> returns false and hidden while <paramref name="visibleWhen"/>
+    /// does.
+    /// </summary>
+    public void SliderRow(
+        float min,
+        float max,
+        string format,
+        Func<float> get,
+        Action<float> set,
+        Func<bool> enabledWhen = null,
+        Func<bool> visibleWhen = null
+    )
     {
         RectTransform band = NewBand(24f, 6f);
         FillSlider(band, min, max, format, get, set, out Action sync);
         _syncs.Add(sync);
+        GreyOutUnless(band, enabledWhen);
+        HideUnless(band, visibleWhen);
     }
 
     /// <summary>Reserves a full-width row at the cursor and returns it for custom content.</summary>
@@ -427,8 +441,8 @@ internal sealed class MenuPage
         {
             if (group.Contains(band.Rect))
             {
-                band.Visible = visible;
-                band.Rect.gameObject.SetActive(visible);
+                band.GroupHidden = !visible;
+                ApplyVisibility(band);
             }
         }
         Relayout();
@@ -487,6 +501,44 @@ internal sealed class MenuPage
         public float Height;
         public float Gap;
         public bool Visible;
+        public bool GroupHidden;
+        public Func<bool> VisibleWhen;
+    }
+
+    /// <summary>
+    /// Shows <paramref name="band"/> only while <paramref name="visibleWhen"/> returns true
+    /// (re-checked on every <see cref="Sync"/>); the rows below move up to fill the gap.
+    /// </summary>
+    public void HideUnless(RectTransform band, Func<bool> visibleWhen)
+    {
+        BandEntry entry = _bands.Find(b => b.Rect == band);
+        if (visibleWhen == null || entry == null)
+        {
+            return;
+        }
+        entry.VisibleWhen = visibleWhen;
+        void SyncVisible()
+        {
+            if (ApplyVisibility(entry))
+            {
+                Relayout();
+            }
+        }
+        SyncVisible();
+        _syncs.Add(SyncVisible);
+    }
+
+    /// <summary>Updates a band's visibility from its group and condition; true when it changed.</summary>
+    private static bool ApplyVisibility(BandEntry band)
+    {
+        bool visible = !band.GroupHidden && (band.VisibleWhen == null || band.VisibleWhen());
+        if (band.Visible == visible)
+        {
+            return false;
+        }
+        band.Visible = visible;
+        band.Rect.gameObject.SetActive(visible);
+        return true;
     }
 }
 

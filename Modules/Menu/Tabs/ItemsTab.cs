@@ -1,4 +1,6 @@
 using System.Collections.Generic;
+using AKeepersNeed2.Core.Settings;
+using AKeepersNeed2.Modules.Menu.Controls;
 using AKeepersNeed2.Shared.Ui;
 using LazyBearTechnology;
 using TMPro;
@@ -8,25 +10,103 @@ using UnityEngine.UI;
 namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
-/// Item adder: a search box and category picker over the <see cref="ItemCatalog"/>, feeding
-/// the virtualized <see cref="ItemList"/>. Give adds the item to the player's inventory and
-/// toasts the result, with a running total while the same item's toast is still showing.
+/// The Items tab. On top, a "Stack sizes" fold holding the rows the StackSizes module declared.
+/// Below it, the item adder: a search box and category picker over the <see cref="ItemCatalog"/>,
+/// feeding the virtualized <see cref="ItemList"/>. Give adds the item to the player's inventory
+/// and toasts the result, with a running total while the same item's toast is still showing.
 /// </summary>
 internal sealed class ItemsTab : IMenuTab
 {
+    private const float FoldHeight = 28f;
+
     private readonly List<ItemCatalog.Entry> _filtered = new List<ItemCatalog.Entry>();
+    private readonly AKNMenuWindow _window;
 
     private ItemCatalog _catalog;
     private ItemList _list;
     private TMP_InputField _search;
     private TextMeshProUGUI _countText;
     private TextMeshProUGUI _categoryLabel;
+    private MenuPage _settings;
+    private RectTransform _settingsGroup;
+    private RectTransform _adder;
+    private TextMeshProUGUI _foldLabel;
+    private bool _settingsOpen;
     private int _categoryIndex;
     private int _giveTotal;
+
+    public ItemsTab(AKNMenuWindow window)
+    {
+        _window = window;
+    }
 
     public string Title => "Items";
 
     public void Build(RectTransform content)
+    {
+        LazyButton fold = MenuUi.CreateButton(
+            "SettingsFold",
+            content,
+            string.Empty,
+            Anchors.Top,
+            new Vector2(0f, -FoldHeight),
+            Vector2.zero
+        );
+        _foldLabel = fold.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (_foldLabel != null)
+        {
+            _foldLabel.fontSize = 12f;
+        }
+        fold.onClick.AddListener(() =>
+        {
+            _settingsOpen = !_settingsOpen;
+            Layout();
+        });
+
+        _settingsGroup = MenuUi.CreateRect("Settings", content);
+        MenuUi.SetRect(
+            _settingsGroup,
+            new Anchors(new Vector2(0f, 0.5f), Vector2.one),
+            Vector2.zero,
+            new Vector2(0f, -FoldHeight)
+        );
+        _settings = new MenuPage(_settingsGroup);
+        RegistrySections.Build(_settings, MenuTab.Items, _window);
+
+        _adder = MenuUi.CreateRect("Adder", content);
+        BuildAdder(_adder);
+        Layout();
+    }
+
+    public void Refresh()
+    {
+        _settings?.Sync();
+    }
+
+    /// <summary>Fold open: top half settings, bottom half the adder. Closed: the adder fills it all.</summary>
+    private void Layout()
+    {
+        if (_foldLabel != null)
+        {
+            _foldLabel.text = _settingsOpen ? "▾ Stack sizes" : "▸ Stack sizes";
+        }
+        _settingsGroup.gameObject.SetActive(_settingsOpen);
+        if (_settingsOpen)
+        {
+            MenuUi.SetRect(
+                _adder,
+                new Anchors(Vector2.zero, new Vector2(1f, 0.5f)),
+                Vector2.zero,
+                new Vector2(0f, -6f)
+            );
+        }
+        else
+        {
+            MenuUi.SetRect(_adder, Anchors.Fill, Vector2.zero, new Vector2(0f, -FoldHeight - 6f));
+        }
+    }
+
+    private void BuildAdder(RectTransform content)
     {
         _catalog = new ItemCatalog();
 
@@ -41,11 +121,6 @@ internal sealed class ItemsTab : IMenuTab
         _list = new ItemList(listArea, GiveItem);
 
         Refilter();
-    }
-
-    // Nothing here is backed by config.
-    public void Refresh()
-    {
     }
 
     private void BuildCategoryRow(RectTransform content)

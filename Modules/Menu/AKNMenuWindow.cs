@@ -92,7 +92,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
             new ZombiesTab(this),
             new ConfigTab(MenuTab.Garden, this),
             new ConfigTab(MenuTab.Fishing, this),
-            new ItemsTab(),
+            new ItemsTab(this),
             new ConfigTab(MenuTab.Map, this),
         };
 

@@ -30,7 +30,11 @@ internal sealed class ToggleSettingRow : SettingRow
     public Func<bool> EnabledWhen { get; set; }
 }
 
-/// <summary>A full-width slider with its value shown in <see cref="Format"/>.</summary>
+/// <summary>
+/// A full-width slider with its value shown in <see cref="Format"/>. Greyed out while
+/// <see cref="EnabledWhen"/> returns false, hidden while <see cref="VisibleWhen"/> does (e.g. one
+/// slider per mode of a choice row, only the current mode's shown).
+/// </summary>
 internal sealed class SliderSettingRow : SettingRow
 {
     public ConfigEntry<float> Entry { get; set; }
@@ -40,6 +44,10 @@ internal sealed class SliderSettingRow : SettingRow
     public float Max { get; set; }
 
     public string Format { get; set; }
+
+    public Func<bool> EnabledWhen { get; set; }
+
+    public Func<bool> VisibleWhen { get; set; }
 }
 
 /// <summary>

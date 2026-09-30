@@ -62,9 +62,26 @@ internal sealed class SettingsBuilder
         Add(new ToggleSettingRow { Entry = entry, EnabledWhen = enabledWhen }, section, order, label);
     }
 
-    public void Slider(MenuSection section, int order, ConfigEntry<float> entry, float min, float max, string format)
+    public void Slider(
+        MenuSection section,
+        int order,
+        ConfigEntry<float> entry,
+        float min,
+        float max,
+        string format,
+        Func<bool> enabledWhen = null,
+        Func<bool> visibleWhen = null
+    )
     {
-        var row = new SliderSettingRow { Entry = entry, Min = min, Max = max, Format = format };
+        var row = new SliderSettingRow
+        {
+            Entry = entry,
+            Min = min,
+            Max = max,
+            Format = format,
+            EnabledWhen = enabledWhen,
+            VisibleWhen = visibleWhen,
+        };
         Add(row, section, order, string.Empty);
     }
 
