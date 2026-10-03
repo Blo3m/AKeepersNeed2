@@ -10,14 +10,19 @@ using UnityEngine.UI;
 namespace AKeepersNeed2.Modules.Menu.Tabs;
 
 /// <summary>
-/// The Items tab. On top, a "Stack sizes" fold holding the rows the StackSizes module declared.
-/// Below it, the item adder: a search box and category picker over the <see cref="ItemCatalog"/>,
-/// feeding the virtualized <see cref="ItemList"/>. Give adds the item to the player's inventory
-/// and toasts the result, with a running total while the same item's toast is still showing.
+/// The Items tab: two sub-tabs at the top, "Add Items" and "Stack Sizes", each page using the full
+/// height. Stack Sizes holds the rows the StackSizes module declared. Add Items is the item adder:
+/// a search box and category picker over the <see cref="ItemCatalog"/>, feeding the virtualized
+/// <see cref="ItemList"/>. Give adds the item to the player's inventory and toasts the result, with a
+/// running total while the same item's toast is still showing.
 /// </summary>
 internal sealed class ItemsTab : IMenuTab
 {
-    private const float FoldHeight = 28f;
+    private const float SubTabHeight = 28f;
+    private const float UnselectedAlpha = 0.55f;
+
+    // Remembered for the session, so reopening the menu shows the page last used.
+    private static bool _showStacks;
 
     private readonly List<ItemCatalog.Entry> _filtered = new List<ItemCatalog.Entry>();
     private readonly AKNMenuWindow _window;
@@ -30,8 +35,8 @@ internal sealed class ItemsTab : IMenuTab
     private MenuPage _settings;
     private RectTransform _settingsGroup;
     private RectTransform _adder;
-    private TextMeshProUGUI _foldLabel;
-    private bool _settingsOpen;
+    private LazyButton _addButton;
+    private LazyButton _stacksButton;
     private int _categoryIndex;
     private int _giveTotal;
 
@@ -44,36 +49,16 @@ internal sealed class ItemsTab : IMenuTab
 
     public void Build(RectTransform content)
     {
-        LazyButton fold = MenuUi.CreateButton(
-            "SettingsFold",
-            content,
-            string.Empty,
-            Anchors.Top,
-            new Vector2(0f, -FoldHeight),
-            Vector2.zero
-        );
-        _foldLabel = fold.GetComponentInChildren<TextMeshProUGUI>(true);
-        if (_foldLabel != null)
-        {
-            _foldLabel.fontSize = 12f;
-        }
-        fold.onClick.AddListener(() =>
-        {
-            _settingsOpen = !_settingsOpen;
-            Layout();
-        });
+        _addButton = SubTabButton(content, "Add Items", new Anchors(new Vector2(0f, 1f), new Vector2(0.5f, 1f)), false);
+        _stacksButton = SubTabButton(content, "Stack Sizes", new Anchors(new Vector2(0.5f, 1f), Vector2.one), true);
 
         _settingsGroup = MenuUi.CreateRect("Settings", content);
-        MenuUi.SetRect(
-            _settingsGroup,
-            new Anchors(new Vector2(0f, 0.5f), Vector2.one),
-            Vector2.zero,
-            new Vector2(0f, -FoldHeight)
-        );
+        MenuUi.SetRect(_settingsGroup, Anchors.Fill, Vector2.zero, new Vector2(0f, -SubTabHeight - 6f));
         _settings = new MenuPage(_settingsGroup);
         RegistrySections.Build(_settings, MenuTab.Items, _window);
 
         _adder = MenuUi.CreateRect("Adder", content);
+        MenuUi.SetRect(_adder, Anchors.Fill, Vector2.zero, new Vector2(0f, -SubTabHeight - 6f));
         BuildAdder(_adder);
         Layout();
     }
@@ -83,27 +68,51 @@ internal sealed class ItemsTab : IMenuTab
         _settings?.Sync();
     }
 
-    /// <summary>Fold open: top half settings, bottom half the adder. Closed: the adder fills it all.</summary>
+    /// <summary>
+    /// A half-width button at the top that switches to its page. Both tabs sit side by side; the
+    /// selected one is drawn full, the other dimmed.
+    /// </summary>
+    private LazyButton SubTabButton(RectTransform content, string text, Anchors anchors, bool stacks)
+    {
+        float gap = stacks ? 3f : -3f;
+        LazyButton button = MenuUi.CreateButton(
+            text.Replace(" ", string.Empty),
+            content,
+            text,
+            anchors,
+            new Vector2(stacks ? gap : 0f, -SubTabHeight),
+            new Vector2(stacks ? 0f : gap, 0f)
+        );
+        TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
+        if (label != null)
+        {
+            label.fontSize = 12f;
+        }
+        button.onClick.AddListener(() =>
+        {
+            _showStacks = stacks;
+            Layout();
+        });
+        return button;
+    }
+
+    /// <summary>Shows the selected page; the other one is hidden, so each gets the full height.</summary>
     private void Layout()
     {
-        if (_foldLabel != null)
+        _settingsGroup.gameObject.SetActive(_showStacks);
+        _adder.gameObject.SetActive(!_showStacks);
+        Dim(_stacksButton, !_showStacks);
+        Dim(_addButton, _showStacks);
+    }
+
+    private static void Dim(LazyButton button, bool dimmed)
+    {
+        var group = button.GetComponent<CanvasGroup>();
+        if (group == null)
         {
-            _foldLabel.text = _settingsOpen ? "▾ Stack sizes" : "▸ Stack sizes";
+            group = button.gameObject.AddComponent<CanvasGroup>();
         }
-        _settingsGroup.gameObject.SetActive(_settingsOpen);
-        if (_settingsOpen)
-        {
-            MenuUi.SetRect(
-                _adder,
-                new Anchors(Vector2.zero, new Vector2(1f, 0.5f)),
-                Vector2.zero,
-                new Vector2(0f, -6f)
-            );
-        }
-        else
-        {
-            MenuUi.SetRect(_adder, Anchors.Fill, Vector2.zero, new Vector2(0f, -FoldHeight - 6f));
-        }
+        group.alpha = dimmed ? UnselectedAlpha : 1f;
     }
 
     private void BuildAdder(RectTransform content)

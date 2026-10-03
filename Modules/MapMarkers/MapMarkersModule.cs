@@ -121,6 +121,16 @@ internal sealed class MapMarkersModule : HarmonyModule
             AccessTools.Method(typeof(MapPageWidget), nameof(MapPageWidget.Redraw)),
             postfix: new HarmonyMethod(typeof(MapMarkersModule), nameof(AfterRedraw))
         );
+        harmony.Patch(
+            AccessTools.Method(typeof(MapPageWidget), "PanMapByKeyboard"),
+            prefix: new HarmonyMethod(typeof(MapMarkersModule), nameof(PanUnlessTyping))
+        );
+    }
+
+    // The map pans with WASD/arrows every frame; typing in the legend's search box would move it.
+    private static bool PanUnlessTyping()
+    {
+        return !InputGate.IsTextInputFocused();
     }
 
     private static void AfterRedraw(MapPageWidget __instance)

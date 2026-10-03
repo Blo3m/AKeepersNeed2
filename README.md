@@ -116,7 +116,7 @@ right. When the mod is installed, the main menu shows
 - **Infinite stock** — fishing spots never run out
 
 **Items**
-- **Bigger stacks** (in the "Stack sizes" fold) — separately for your inventory, chests and
+- **Bigger stacks** (Items tab → Stack Sizes) — separately for your inventory, chests and
   stations, and zombie/porter inventories: multiply vanilla stack sizes (x1–100) or use one size
   for every stackable item (up to 9999). Tools and other single items never change; turning it off
   leaves bigger stacks as they are
@@ -134,7 +134,8 @@ right. When the mod is installed, the main menu shows
   walkable spot (outdoors only)
 - **Map markers** — mark resources on the map by what they give (wood, stone, iron ore, berries,
   mushrooms …), plus chests, stockpiles, NPCs with something to say (gold when a quest is ready to
-  hand in), fishing spots and doors. Pick them in the "Markers" legend on the map page; hover a
+  hand in), fishing spots and doors. Pick them in the "Markers" legend on the map page (with a
+  search box); hover a
   marker for its name. Marker size is adjustable
 - **Minimap** — a map in the top-right corner centred on you, with an arrow for where you're
   heading and the same map markers, bookmarks and NPC faces as the big map. Zoom with the + / -

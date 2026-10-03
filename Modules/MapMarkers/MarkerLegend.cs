@@ -19,19 +19,24 @@ namespace AKeepersNeed2.Modules.MapMarkers;
 /// </summary>
 internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
 {
-    private const float TabWidth = 104f;
-    private const float TabHeight = 26f;
-    private const float PanelWidth = 236f;
+    private const float TabWidth = 120f;
+    private const float TabHeight = 30f;
+    private const float PanelWidth = 280f;
     private const float Margin = 12f;
-    private const float GroupHeight = 24f;
-    private const float TypeHeight = 22f;
-    private const float Indent = 18f;
-    private const float Tick = 12f;
-    private const float FoldWidth = 30f;
+    private const float GroupHeight = 30f;
+    private const float TypeHeight = 28f;
+    private const float Indent = 20f;
+    private const float Tick = 15f;
+    private const float FoldWidth = 34f;
+    private const float IconSize = 22f;
+    private const float ChevronSize = 14f;
     private const float FrameInset = 13f;
 
     private static readonly Color TickOff = new Color(0f, 0f, 0f, 0.35f);
     private static readonly Color TickOn = new Color(0.95f, 0.75f, 0.25f, 1f);
+    // The orange and dark brown of the entrance chevrons painted on the world map.
+    private static readonly Color ChevronColor = new Color(0.96f, 0.62f, 0.18f, 1f);
+    private static readonly Color ChevronEdge = new Color(0.25f, 0.12f, 0.05f, 1f);
     private static readonly Color TickSome = new Color(0.95f, 0.75f, 0.25f, 0.45f);
 
     private readonly HashSet<string> _expanded = new HashSet<string>();
@@ -41,6 +46,8 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
     private RectTransform _panel;
     private RectTransform _content;
     private TextMeshProUGUI _tabLabel;
+    private TMP_InputField _search;
+    private string _query = string.Empty;
     private bool _open;
 
     public bool HandlesShiftClick => true;
@@ -114,8 +121,18 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
         MakeButton(buttons, "None", right, new Vector2(3f, 0f), Vector2.zero)
             .onClick.AddListener(() => SetAll(false));
 
+        _search = MenuUi.CreateInputField("Search", _panel, "Search…", 13f);
+        var searchRect = (RectTransform)_search.transform;
+        MenuUi.SetRect(searchRect, Anchors.Top, new Vector2(16f, -76f), new Vector2(-16f, -48f));
+        _search.onValueChanged.AddListener(text =>
+        {
+            _query = (text ?? string.Empty).Trim().ToLowerInvariant();
+            BuildRows();
+            Refresh();
+        });
+
         RectTransform listArea = MenuUi.CreateRect("List", _panel);
-        MenuUi.SetRect(listArea, Anchors.Fill, new Vector2(14f, 14f), new Vector2(-14f, -48f));
+        MenuUi.SetRect(listArea, Anchors.Fill, new Vector2(14f, 14f), new Vector2(-14f, -82f));
         RectTransform scrollArea = ScrollHints.SplitArea(listArea, out RectTransform up, out RectTransform down);
         var scroll = scrollArea.gameObject.AddComponent<ScrollRect>();
         scroll.horizontal = false;
@@ -178,10 +195,21 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
         float y = 0f;
         foreach (MarkerGroup group in _layer.Catalog.Groups)
         {
-            y = GroupRow(group, y);
-            if (group.IsResource && _expanded.Contains(group.Key))
+            // Searching shows groups whose name matches (with all their types) and groups with a
+            // matching type (with just those, unfolded).
+            bool groupMatches = Matches(group.Title);
+            List<MarkerType> types = groupMatches
+                ? group.Types
+                : group.Types.Where(type => Matches(type.Label)).ToList();
+            if (!groupMatches && types.Count == 0)
             {
-                foreach (MarkerType type in group.Types)
+                continue;
+            }
+            y = GroupRow(group, y);
+            bool unfolded = _query.Length > 0 || _expanded.Contains(group.Key);
+            if (group.IsResource && unfolded)
+            {
+                foreach (MarkerType type in types)
                 {
                     y = TypeRow(type, y);
                 }
@@ -189,11 +217,19 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
         }
         if (y == 0f)
         {
-            TextMeshProUGUI empty = Text(_content, "Nothing to mark here.", 11f);
+            string message = _query.Length > 0
+                ? "No match."
+                : "Nothing to mark here.";
+            TextMeshProUGUI empty = Text(_content, message, 13f);
             MenuUi.SetRect(empty.rectTransform, Anchors.Top, new Vector2(4f, -20f), Vector2.zero);
             y = -20f;
         }
         _content.sizeDelta = new Vector2(0f, -y);
+    }
+
+    private bool Matches(string text)
+    {
+        return _query.Length == 0 || (text ?? string.Empty).ToLowerInvariant().Contains(_query);
     }
 
     private float GroupRow(MarkerGroup group, float top)
@@ -203,7 +239,7 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
             : 0f;
         RectTransform row = Row(top, GroupHeight, 0f, foldWidth, () => Toggle(group.Types));
         Image tick = TickBox(row);
-        TextMeshProUGUI label = Text(row, string.Empty, 12f);
+        TextMeshProUGUI label = Text(row, string.Empty, 14f);
         float right = group.IsResource
             ? -FoldWidth - 4f
             : 0f;
@@ -220,10 +256,7 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
         if (group.IsResource)
         {
             bool open = _expanded.Contains(group.Key);
-            string arrow = open
-                ? "▾"
-                : "▸";
-            UnityEngine.UI.Button fold = FoldButton(row, arrow);
+            UnityEngine.UI.Button fold = FoldButton(row, open);
             fold.onClick.AddListener(() =>
             {
                 if (!_expanded.Remove(group.Key))
@@ -248,10 +281,14 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
             icon.sprite = type.Icon;
             icon.preserveAspect = true;
             icon.raycastTarget = false;
-            MenuUi.SetRect(icon.rectTransform, Anchors.Left, new Vector2(Tick + 6f, 2f), new Vector2(Tick + 24f, -2f));
-            textLeft = Tick + 28f;
+            RectTransform iconRect = icon.rectTransform;
+            iconRect.anchorMin = iconRect.anchorMax = new Vector2(0f, 0.5f);
+            iconRect.pivot = new Vector2(0f, 0.5f);
+            iconRect.sizeDelta = new Vector2(IconSize, IconSize);
+            iconRect.anchoredPosition = new Vector2(Tick + 6f, 0f);
+            textLeft = Tick + IconSize + 12f;
         }
-        TextMeshProUGUI label = Text(row, string.Empty, 11f);
+        TextMeshProUGUI label = Text(row, string.Empty, 13f);
         MenuUi.SetRect(label.rectTransform, Anchors.Fill, new Vector2(textLeft, 0f), Vector2.zero);
         _syncs.Add(() =>
         {
@@ -323,17 +360,29 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
     /// The ▸/▾ at a resource group's right. A plain uGUI button, like the rows: the game's
     /// <c>LazyButton</c> never got the click inside the scroll list.
     /// </summary>
-    private static UnityEngine.UI.Button FoldButton(RectTransform row, string arrow)
+    /// <summary>
+    /// An orange chevron like the world map's entrance marks (right when folded, down when open) on an
+    /// invisible click area. Drawn (<see cref="GeneratedSprites.Chevron"/>): those marks are painted into
+    /// the map texture, and the ▸ text glyphs didn't show in the game's font here.
+    /// </summary>
+    private static UnityEngine.UI.Button FoldButton(RectTransform row, bool open)
     {
-        Image image = MenuUi.CreateImage("Fold", row, new Color(0.28f, 0.12f, 0.07f, 1f));
-        MenuUi.ApplyCell(image);
-        MenuUi.SetRect(image.rectTransform, Anchors.Right, new Vector2(-FoldWidth, 1f), new Vector2(0f, -1f));
-        var button = image.gameObject.AddComponent<UnityEngine.UI.Button>();
-        button.targetGraphic = image;
-        TextMeshProUGUI label = MenuUi.CreateText("Arrow", image.rectTransform, 12f, TextAlignmentOptions.Center);
-        MenuUi.Stretch(label.rectTransform);
-        label.raycastTarget = false;
-        label.text = arrow;
+        Image hit = MenuUi.CreateImage("Fold", row, new Color(0f, 0f, 0f, 0.001f));
+        MenuUi.SetRect(hit.rectTransform, Anchors.Right, new Vector2(-FoldWidth, 1f), new Vector2(0f, -1f));
+        var button = hit.gameObject.AddComponent<UnityEngine.UI.Button>();
+        button.targetGraphic = hit;
+        button.transition = Selectable.Transition.None;
+
+        Image chevron = MenuUi.CreateImage("Chevron", hit.rectTransform, ChevronColor);
+        chevron.sprite = GeneratedSprites.Chevron;
+        chevron.raycastTarget = false;
+        var edge = chevron.gameObject.AddComponent<Outline>();
+        edge.effectColor = ChevronEdge;
+        edge.effectDistance = new Vector2(1f, -1f);
+        RectTransform rect = chevron.rectTransform;
+        rect.anchorMin = rect.anchorMax = rect.pivot = new Vector2(0.5f, 0.5f);
+        rect.sizeDelta = new Vector2(ChevronSize, ChevronSize);
+        rect.localEulerAngles = new Vector3(0f, 0f, open ? 180f : -90f);
         return button;
     }
 
@@ -343,7 +392,7 @@ internal sealed class MarkerLegend : MonoBehaviour, IMapClickTarget
         TextMeshProUGUI label = button.GetComponentInChildren<TextMeshProUGUI>(true);
         if (label != null)
         {
-            label.fontSize = 11f;
+            label.fontSize = 13f;
         }
         return button;
     }

@@ -12,6 +12,7 @@ internal static class GeneratedSprites
 
     private static Sprite _dot;
     private static Sprite _arrow;
+    private static Sprite _chevron;
 
     /// <summary>A round dot: light centre, dark rim, anti-aliased edge. Tint it with the image colour.</summary>
     public static Sprite Dot => _dot != null
@@ -22,6 +23,33 @@ internal static class GeneratedSprites
     public static Sprite Arrow => _arrow != null
         ? _arrow
         : _arrow = Build(ArrowPixel);
+
+    /// <summary>
+    /// An open chevron pointing up (two thick strokes meeting at the tip), like the entrance marks
+    /// painted on the world map. White; tint it, and add an <c>Outline</c> for the dark edge.
+    /// </summary>
+    public static Sprite Chevron => _chevron != null
+        ? _chevron
+        : _chevron = Build(ChevronPixel);
+
+    private static Color32 ChevronPixel(float x, float y)
+    {
+        const float halfWidth = 3.5f;
+        var tip = new Vector2(Size * 0.5f, Size - 8f);
+        var point = new Vector2(x, y);
+        float distance = Mathf.Min(
+            DistanceToSegment(point, new Vector2(4f, 10f), tip),
+            DistanceToSegment(point, tip, new Vector2(Size - 4f, 10f))
+        );
+        return new Color32(255, 255, 255, (byte)(Mathf.Clamp01(halfWidth - distance + 0.5f) * 255f));
+    }
+
+    private static float DistanceToSegment(Vector2 point, Vector2 a, Vector2 b)
+    {
+        Vector2 ab = b - a;
+        float t = Mathf.Clamp01(Vector2.Dot(point - a, ab) / ab.sqrMagnitude);
+        return Vector2.Distance(point, a + ab * t);
+    }
 
     private static Color32 DotPixel(float x, float y)
     {
