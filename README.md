@@ -65,7 +65,7 @@ right. When the mod is installed, the main menu shows
 
 **Crafting**
 - **Free crafting** — craft without the required items; nothing is consumed (includes
-  alchemy and tool durability)
+  alchemy and tool durability; garden and vineyard planting is Free planting)
 - **Instant crafting** — your crafts finish immediately (garden growing, star, autopsy and
   zombie crafts keep their normal time)
 - **Ignore crafting mastery** — run crafts above your mastery level, including star crafts and
@@ -77,6 +77,7 @@ right. When the mod is installed, the main menu shows
 - **Zombie craft speed** — zombies work crafting stations faster (1–50×)
 - **Zombie gather speed** — zombies chop, mine and harvest faster (1–50×)
 - **Zombie walk speed** — every zombie walks faster or slower (0.5–10×)
+- **Gardeners need no shovel** — zombie gardeners work without a shovel in hand
 - **Max mastery** — zombies work with enough mastery for every job at full output (not saved;
   the boosted value shows in the zombie window while on)
 - **Porter capacity** — porters carry 4–50 slots; applies to new porters, with a button to resize
@@ -98,6 +99,8 @@ right. When the mod is installed, the main menu shows
 - **Harvest yield** — garden and vineyard harvests give more (crops, seeds and leaves, 1–20×);
   Resource drops no longer applies to harvests, so they don't stack. One-hit harvesting is
   Gathering → One Hit
+- **Free planting** — planting and fertilizing garden and vineyard beds uses up no seeds or
+  fertilizer (yours and zombie gardeners'); you still need one seed of a kind to pick it
 - **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 
 **Fishing**

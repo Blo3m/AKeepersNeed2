@@ -1,4 +1,5 @@
 using AKeepersNeed2.Core.Settings;
+using AKeepersNeed2.Shared.Garden;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -53,8 +54,9 @@ internal sealed class FreeCraftingModule : HarmonyModule
         );
     }
 
-    private static bool SkipRemoveRequirements()
+    // Garden and vineyard beds (planting, fertilizing) are Free Planting's; they keep their cost here.
+    private static bool SkipRemoveRequirements(CraftComponent __instance)
     {
-        return false;
+        return GardenBeds.IsBed(__instance.CraftableObject as WgoData);
     }
 }

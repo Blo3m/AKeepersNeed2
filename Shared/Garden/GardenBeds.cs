@@ -14,4 +14,14 @@ internal static class GardenBeds
     {
         return wgo != null && wgo.GetGameResInt(SeedLock) > 0;
     }
+
+    /// <summary>
+    /// Any garden or vineyard bed, empty or planted. The game's <c>GardenBedNavigation.IsGardenPlot</c>
+    /// only knows the empty bed objects (wgoGroup <c>garden_bed</c> / <c>vineyard_objects</c>); a
+    /// planted bed is swapped for a crop object outside those groups, so it's recognised by its crop.
+    /// </summary>
+    public static bool IsBed(WgoData wgo)
+    {
+        return GardenBedNavigation.IsGardenPlot(wgo) || HasCrop(wgo);
+    }
 }
