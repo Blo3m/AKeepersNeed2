@@ -92,7 +92,8 @@ right. When the mod is installed, the main menu shows
 - **Instant grow** — crops finish growing right after planting
 - **Perfect growth** — every growth step succeeds, so no part of a crop is lost (zombie-tended beds
   too)
-- **Gold crops only** — every crop grows as gold quality
+- **Best quality crops** — every crop and seed grows as the best quality that crop has (gold where
+  it has gold; crops without quality tiers are unchanged)
 - **Perfect planting** — planting work never fails, so crops get the full head start
 - **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 

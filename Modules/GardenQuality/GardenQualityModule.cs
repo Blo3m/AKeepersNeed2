@@ -9,7 +9,7 @@ using LazyBearTechnology;
 namespace AKeepersNeed2.Modules.GardenQuality;
 
 /// <summary>
-/// Crops that never fail and come out gold. A bed's growing craft ticks in
+/// Crops that never fail and come out at their best quality. A bed's growing craft ticks in
 /// <c>CraftComponent.UpdateGardenGrowingCraft</c>: below the mastery lock each tick is a roll, and a
 /// failed tick still uses up a cell (no crop for it). Every successful cell adds the bed resources
 /// the craft lists for it (<c>crop</c>, <c>crop_b</c>, <c>crop_s</c>, <c>crop_g</c>: common to gold),
@@ -19,14 +19,19 @@ namespace AKeepersNeed2.Modules.GardenQuality;
 /// </summary>
 internal sealed class GardenQualityModule : HarmonyModule
 {
-    private const string Gold = "crop_g";
-    private static readonly string[] LowerQualities = { "crop", "crop_b", "crop_s" };
+    // Bed counters per quality, lowest first. A crop's harvest formulas only read the tiers its own
+    // rewards use (tier 1 pumpkin: bronze and silver; wheat: plain only), so each crop is upgraded to
+    // its own best tier, never to one nothing reads.
+    private static readonly string[] CropTiers = { "crop", "crop_b", "crop_s", "crop_g" };
+    private static readonly string[] SeedTiers = { "seed", "seed_b", "seed_s", "seed_g" };
+
+    private static readonly Dictionary<CraftDef, string[]> BestTiers = new Dictionary<CraftDef, string[]>();
 
     private static readonly AccessTools.FieldRef<ZombieCraftActivity, WgoData> ZombieBedRef =
         AccessTools.FieldRefAccess<ZombieCraftActivity, WgoData>("wgoData");
 
     private static ConfigEntry<bool> _perfectGrowth;
-    private static ConfigEntry<bool> _goldOnly;
+    private static ConfigEntry<bool> _bestQuality;
     private static ConfigEntry<bool> _perfectPlanting;
 
     public override string Name => "GardenQuality";
@@ -34,7 +39,7 @@ internal sealed class GardenQualityModule : HarmonyModule
     protected override ConfigEntry<bool> EnabledFlag => _perfectGrowth;
 
     protected override IEnumerable<ConfigEntry<bool>> GateFlags =>
-        new[] { _perfectGrowth, _goldOnly, _perfectPlanting };
+        new[] { _perfectGrowth, _bestQuality, _perfectPlanting };
 
     public override void DeclareSettings(SettingsBuilder settings)
     {
@@ -44,7 +49,12 @@ internal sealed class GardenQualityModule : HarmonyModule
             false,
             "Every growth tick succeeds on every bed, so no crop cell is lost."
         );
-        _goldOnly = settings.Profile("GardenQuality", "GoldOnly", false, "Every crop grows as gold quality.");
+        _bestQuality = settings.Profile(
+            "GardenQuality",
+            "BestQuality",
+            false,
+            "Every crop and seed grows as the best quality that crop has (gold where it has gold)."
+        );
         _perfectPlanting = settings.Profile(
             "GardenQuality",
             "PerfectPlanting",
@@ -52,7 +62,7 @@ internal sealed class GardenQualityModule : HarmonyModule
             "Planting work never fails a cell, so crops start with the full head start."
         );
         settings.Toggle(MenuSection.Crops, 10, "Perfect Growth", _perfectGrowth);
-        settings.Toggle(MenuSection.Crops, 20, "Gold Crops Only", _goldOnly);
+        settings.Toggle(MenuSection.Crops, 20, "Best Quality Crops", _bestQuality);
         settings.Toggle(MenuSection.Crops, 30, "Perfect Planting", _perfectPlanting);
     }
 
@@ -64,7 +74,7 @@ internal sealed class GardenQualityModule : HarmonyModule
         );
         harmony.Patch(
             AccessTools.Method(typeof(WgoData), nameof(WgoData.OnSuccessfulTicksChange)),
-            prefix: new HarmonyMethod(typeof(GardenQualityModule), nameof(AddCropsAsGold))
+            prefix: new HarmonyMethod(typeof(GardenQualityModule), nameof(AddAsBestQuality))
         );
         var plantingHit = new HarmonyMethod(typeof(GardenQualityModule), nameof(PlantWithoutFailing));
         harmony.Patch(
@@ -106,17 +116,17 @@ internal sealed class GardenQualityModule : HarmonyModule
     }
 
     /// <summary>
-    /// Does the game's per-cell crop reward itself while Gold Crops Only is on, with every common,
-    /// bronze and silver crop added as gold instead. Other rewards are added unchanged.
+    /// Does the game's per-cell reward itself while Best Quality Crops is on, with every crop and seed
+    /// added as the best tier this crop's rewards use. Other rewards are added unchanged.
     /// </summary>
-    private static bool AddCropsAsGold(
+    private static bool AddAsBestQuality(
         WgoData __instance,
         int startTick,
         int endTick,
         CraftElementBase craftElement
     )
     {
-        if (!_goldOnly.Value || !(craftElement is CraftElement craft))
+        if (!_bestQuality.Value || !(craftElement is CraftElement craft))
         {
             return true;
         }
@@ -124,26 +134,68 @@ internal sealed class GardenQualityModule : HarmonyModule
         {
             if (reward.sucessfulProgressTick > startTick && reward.sucessfulProgressTick <= endTick)
             {
-                __instance.AddGameRes(AsGold(reward.gameRes));
+                __instance.AddGameRes(AsBest(reward.gameRes, Best(craft.Definition)));
             }
         }
         return false;
     }
 
-    private static GameRes AsGold(GameRes reward)
+    /// <summary>The best crop and seed tier <paramref name="def"/>'s rewards use (null when none).</summary>
+    private static string[] Best(CraftDef def)
     {
-        GameRes gold = reward.Clone();
-        foreach (string quality in LowerQualities)
+        if (BestTiers.TryGetValue(def, out string[] best))
         {
-            float amount = gold.Get(quality);
-            if (amount > 0f)
+            return best;
+        }
+        best = new[] { BestUsed(def, CropTiers), BestUsed(def, SeedTiers) };
+        BestTiers[def] = best;
+        return best;
+    }
+
+    private static string BestUsed(CraftDef def, string[] tiers)
+    {
+        string best = null;
+        foreach (GameResPerProgress reward in def.gameresPerSuccessfulProgress)
+        {
+            for (int i = tiers.Length - 1; i >= 0; i--)
             {
-                gold.Set(quality, 0f);
-                gold.Add(Gold, amount);
+                if (reward.gameRes.Get(tiers[i]) > 0f)
+                {
+                    if (best == null || i > Array.IndexOf(tiers, best))
+                    {
+                        best = tiers[i];
+                    }
+                    break;
+                }
             }
         }
-        gold.RemoveZeroValues();
-        return gold;
+        return best;
+    }
+
+    private static GameRes AsBest(GameRes reward, string[] best)
+    {
+        GameRes upgraded = reward.Clone();
+        MoveTo(upgraded, CropTiers, best[0]);
+        MoveTo(upgraded, SeedTiers, best[1]);
+        upgraded.RemoveZeroValues();
+        return upgraded;
+    }
+
+    private static void MoveTo(GameRes reward, string[] tiers, string best)
+    {
+        if (best == null)
+        {
+            return;
+        }
+        foreach (string tier in tiers)
+        {
+            float amount = reward.Get(tier);
+            if (tier != best && amount > 0f)
+            {
+                reward.Set(tier, 0f);
+                reward.Add(best, amount);
+            }
+        }
     }
 
     /// <summary>A planting hit that rolled a failure (star crafts only) grows one cell instead.</summary>
