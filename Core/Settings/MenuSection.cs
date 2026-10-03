@@ -77,6 +77,9 @@ internal enum MenuSection
     [Section(MenuTab.Garden, "Growth", 10)]
     Growth,
 
+    [Section(MenuTab.Garden, "Crops", 20)]
+    Crops,
+
     [Section(MenuTab.Fishing, "Fishing", 10)]
     Fishing,
 

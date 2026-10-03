@@ -90,6 +90,10 @@ right. When the mod is installed, the main menu shows
 **Garden**
 - **Growth speed** — crops grow faster (1–100×)
 - **Instant grow** — crops finish growing right after planting
+- **Perfect growth** — every growth step succeeds, so no part of a crop is lost (zombie-tended beds
+  too)
+- **Gold crops only** — every crop grows as gold quality
+- **Perfect planting** — planting work never fails, so crops get the full head start
 - **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 
 **Fishing**
