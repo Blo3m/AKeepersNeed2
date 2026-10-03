@@ -101,6 +101,9 @@ right. When the mod is installed, the main menu shows
   Gathering → One Hit
 - **Free planting** — planting and fertilizing garden and vineyard beds uses up no seeds or
   fertilizer (yours and zombie gardeners'); you still need one seed of a kind to pick it
+- **All fertilizer slots** — every garden and vineyard bed has all 3 fertilizer slots while on
+- **Bed setters** — set garden / vineyard farming mastery (the growing mastery every bed gets) and
+  bed level (only the bed icon), with confirmation
 - **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 
 **Fishing**

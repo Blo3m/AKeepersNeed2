@@ -80,6 +80,9 @@ internal enum MenuSection
     [Section(MenuTab.Garden, "Crops", 20)]
     Crops,
 
+    [Section(MenuTab.Garden, "Beds", 30)]
+    Beds,
+
     [Section(MenuTab.Fishing, "Fishing", 10)]
     Fishing,
 
