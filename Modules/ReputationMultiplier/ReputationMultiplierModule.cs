@@ -38,12 +38,12 @@ internal sealed class ReputationMultiplierModule : HarmonyModule
         _multiplier = settings.Profile(
             "ReputationMultiplier",
             "Multiplier",
-            2f,
+            1f,
             "Reputation gain multiplier.",
             new AcceptableValueRange<float>(1f, 20f)
         );
         settings.Toggle(MenuSection.Reputation, 10, "Reputation Multiplier", _enabled);
-        settings.Slider(MenuSection.Reputation, 20, _multiplier, 1f, 20f, "0.0");
+        settings.Slider(MenuSection.Reputation, 20, _multiplier, 1f, 20f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

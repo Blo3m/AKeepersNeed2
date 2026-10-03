@@ -33,12 +33,12 @@ internal sealed class ZombieWalkSpeedModule : HarmonyModule
         _multiplier = settings.Profile(
             "ZombieWalkSpeed",
             "Multiplier",
-            2f,
+            1f,
             "Zombie walking speed multiplier.",
             new AcceptableValueRange<float>(0.5f, 10f)
         );
         settings.Toggle(MenuSection.ZombieWork, 50, "Zombie Walk Speed", _enabled);
-        settings.Slider(MenuSection.ZombieWork, 60, _multiplier, 0.5f, 10f, "0.0");
+        settings.Slider(MenuSection.ZombieWork, 60, _multiplier, 0.5f, 10f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

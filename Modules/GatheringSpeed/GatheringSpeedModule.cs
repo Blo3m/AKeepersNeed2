@@ -39,7 +39,7 @@ internal sealed class GatheringSpeedModule : HarmonyModule
         _multiplier = settings.Profile(
             "GatheringSpeed",
             "Multiplier",
-            2f,
+            1f,
             "Gathering speed multiplier (how much each swing does).",
             new AcceptableValueRange<float>(1f, 20f)
         );
@@ -50,7 +50,7 @@ internal sealed class GatheringSpeedModule : HarmonyModule
             "Every swing finishes the object. Overrides the gathering speed multiplier."
         );
         settings.Toggle(MenuSection.Gathering, 20, "Gathering Speed", _enabled);
-        settings.Slider(MenuSection.Gathering, 30, _multiplier, 1f, 20f, "0.0");
+        settings.Slider(MenuSection.Gathering, 30, _multiplier, 1f, 20f, "'x'0.#");
         settings.Toggle(MenuSection.Gathering, 40, "One Hit", _oneHit);
     }
 

@@ -38,12 +38,12 @@ internal sealed class ZombieCraftSpeedModule : HarmonyModule
         _multiplier = settings.Profile(
             "ZombieCraftSpeed",
             "Multiplier",
-            2f,
+            1f,
             "Zombie crafting speed multiplier.",
             new AcceptableValueRange<float>(1f, 50f)
         );
         settings.Toggle(MenuSection.ZombieWork, 10, "Zombie Craft Speed", _enabled);
-        settings.Slider(MenuSection.ZombieWork, 20, _multiplier, 1f, 50f, "0.0");
+        settings.Slider(MenuSection.ZombieWork, 20, _multiplier, 1f, 50f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

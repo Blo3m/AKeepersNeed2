@@ -43,12 +43,12 @@ internal sealed class ZombieGatherSpeedModule : HarmonyModule
         _multiplier = settings.Profile(
             "ZombieGatherSpeed",
             "Multiplier",
-            2f,
+            1f,
             "Zombie gathering speed multiplier.",
             new AcceptableValueRange<float>(1f, 50f)
         );
         settings.Toggle(MenuSection.ZombieWork, 30, "Zombie Gather Speed", _enabled);
-        settings.Slider(MenuSection.ZombieWork, 40, _multiplier, 1f, 50f, "0.0");
+        settings.Slider(MenuSection.ZombieWork, 40, _multiplier, 1f, 50f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

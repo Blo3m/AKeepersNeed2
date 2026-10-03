@@ -54,7 +54,7 @@ internal sealed class StackSizesModule : HarmonyModule
             settings.Profile(
                 "StackSizes",
                 "PlayerMultiplier",
-                10f,
+                1f,
                 "Player stacks: vanilla stack x this.",
                 new AcceptableValueRange<float>(1f, MaxMultiplier)
             ),
@@ -95,7 +95,7 @@ internal sealed class StackSizesModule : HarmonyModule
             settings.Profile(
                 "StackSizes",
                 "ChestMultiplier",
-                10f,
+                1f,
                 "Chest and station stacks: vanilla stack x this.",
                 new AcceptableValueRange<float>(1f, MaxMultiplier)
             ),
@@ -136,7 +136,7 @@ internal sealed class StackSizesModule : HarmonyModule
             settings.Profile(
                 "StackSizes",
                 "ZombieMultiplier",
-                10f,
+                1f,
                 "Zombie stacks: vanilla stack x this.",
                 new AcceptableValueRange<float>(1f, MaxMultiplier)
             ),

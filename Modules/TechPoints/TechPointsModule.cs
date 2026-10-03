@@ -38,7 +38,7 @@ internal sealed class TechPointsModule : HarmonyModule
             new AcceptableValueRange<float>(1f, 10f)
         );
         settings.Toggle(MenuSection.Drops, 30, "Tech Points", _enabled);
-        settings.Slider(MenuSection.Drops, 40, _multiplier, 1f, 10f, "0.0");
+        settings.Slider(MenuSection.Drops, 40, _multiplier, 1f, 10f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

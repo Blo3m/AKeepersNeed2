@@ -95,6 +95,9 @@ right. When the mod is installed, the main menu shows
 - **Best quality crops** — every crop and seed grows as the best quality that crop has (gold where
   it has gold; crops without quality tiers are unchanged)
 - **Perfect planting** — planting work never fails, so crops get the full head start
+- **Harvest yield** — garden and vineyard harvests give more (crops, seeds and leaves, 1–20×);
+  Resource drops no longer applies to harvests, so they don't stack. One-hit harvesting is
+  Gathering → One Hit
 - **Ignore garden mastery** — plant and grow crops without the gardening mastery they need
 
 **Fishing**

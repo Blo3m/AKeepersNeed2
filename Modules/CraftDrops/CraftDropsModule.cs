@@ -40,7 +40,7 @@ internal sealed class CraftDropsModule : HarmonyModule
             new AcceptableValueRange<float>(1f, 10f)
         );
         settings.Toggle(MenuSection.CraftOutput, 10, "Craft Output", _enabled);
-        settings.Slider(MenuSection.CraftOutput, 20, _multiplier, 1f, 10f, "0.0");
+        settings.Slider(MenuSection.CraftOutput, 20, _multiplier, 1f, 10f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

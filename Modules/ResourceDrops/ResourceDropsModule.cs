@@ -1,4 +1,5 @@
 using AKeepersNeed2.Core.Settings;
+using AKeepersNeed2.Shared.Garden;
 using AKeepersNeed2.Shared.Patching;
 using BepInEx.Configuration;
 using HarmonyLib;
@@ -41,7 +42,7 @@ internal sealed class ResourceDropsModule : HarmonyModule
             new AcceptableValueRange<float>(1f, 10f)
         );
         settings.Toggle(MenuSection.Drops, 10, "Resource Drops", _enabled);
-        settings.Slider(MenuSection.Drops, 20, _multiplier, 1f, 10f, "0.0");
+        settings.Slider(MenuSection.Drops, 20, _multiplier, 1f, 10f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)
@@ -53,9 +54,10 @@ internal sealed class ResourceDropsModule : HarmonyModule
         );
     }
 
-    private static void ScaleDeathDrop(Item item)
+    // Garden and vineyard harvests have their own multiplier (GardenYield), so they aren't scaled twice.
+    private static void ScaleDeathDrop(WgoData __instance, Item item)
     {
-        if (!Death.Active || item == null || item.Count <= 0)
+        if (!Death.Active || item == null || item.Count <= 0 || GardenBeds.HasCrop(__instance))
         {
             return;
         }

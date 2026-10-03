@@ -69,7 +69,7 @@ internal sealed class FishingModule : HarmonyModule
         _fishPerCatch = settings.Profile(
             "Fishing",
             "FishPerCatch",
-            2f,
+            1f,
             "Fish per catch (vanilla 1).",
             new AcceptableValueRange<float>(1f, 50f)
         );

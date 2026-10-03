@@ -34,7 +34,7 @@ internal sealed class GardenGrowthModule : HarmonyModule
         _multiplier = settings.Profile(
             "GardenGrowth",
             "Multiplier",
-            5f,
+            1f,
             "Crop growth speed multiplier.",
             new AcceptableValueRange<float>(1f, 100f)
         );
@@ -45,7 +45,7 @@ internal sealed class GardenGrowthModule : HarmonyModule
             "Crops finish growing right after planting. Overrides the growth speed multiplier."
         );
         settings.Toggle(MenuSection.Growth, 10, "Growth Speed", _enabled);
-        settings.Slider(MenuSection.Growth, 20, _multiplier, 1f, 100f, "0");
+        settings.Slider(MenuSection.Growth, 20, _multiplier, 1f, 100f, "'x'0.#");
         settings.Toggle(MenuSection.Growth, 30, "Instant Grow", _instant);
     }
 

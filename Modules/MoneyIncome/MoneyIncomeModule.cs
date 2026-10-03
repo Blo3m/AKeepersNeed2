@@ -51,7 +51,7 @@ internal sealed class MoneyIncomeModule : HarmonyModule
         _tradeMultiplier = settings.Profile(
             "MoneyIncome",
             "TradeMultiplier",
-            2f,
+            1f,
             "Sell price multiplier.",
             new AcceptableValueRange<float>(1f, 50f)
         );
@@ -70,15 +70,15 @@ internal sealed class MoneyIncomeModule : HarmonyModule
         _otherMultiplier = settings.Profile(
             "MoneyIncome",
             "OtherMultiplier",
-            2f,
+            1f,
             "Other income multiplier.",
             new AcceptableValueRange<float>(1f, 50f)
         );
         settings.Toggle(MenuSection.Money, 10, "Trade Income", _trade);
-        settings.Slider(MenuSection.Money, 20, _tradeMultiplier, 1f, 50f, "0.0");
+        settings.Slider(MenuSection.Money, 20, _tradeMultiplier, 1f, 50f, "'x'0.#");
         settings.Toggle(MenuSection.Money, 30, "    Ignore Vendor Money", _ignoreVendorMoney, () => _trade.Value);
         settings.Toggle(MenuSection.Money, 40, "Other Income", _other);
-        settings.Slider(MenuSection.Money, 50, _otherMultiplier, 1f, 50f, "0.0");
+        settings.Slider(MenuSection.Money, 50, _otherMultiplier, 1f, 50f, "'x'0.#");
     }
 
     protected override void Apply(Harmony harmony)

@@ -36,7 +36,7 @@ internal sealed class MovementSpeedModule : HarmonyModule, IUpdatable
         _multiplier = settings.Profile(
             "MovementSpeed",
             "Multiplier",
-            1.5f,
+            1f,
             "Walking speed multiplier while the speed change is active.",
             new AcceptableValueRange<float>(0.5f, 5f)
         );
@@ -62,7 +62,7 @@ internal sealed class MovementSpeedModule : HarmonyModule, IUpdatable
         _mode.SettingChanged += (_, _) => _toggledOn = false;
 
         settings.Toggle(MenuSection.Movement, 30, "Movement Speed", _enabled);
-        settings.Slider(MenuSection.Movement, 40, _multiplier, 0.5f, 5f, "0.0");
+        settings.Slider(MenuSection.Movement, 40, _multiplier, 0.5f, 5f, "'x'0.#");
         settings.Choice(MenuSection.Movement, 50, "Speed Mode", _mode);
         settings.Key(MenuSection.Movement, 60, "Speed Key", _key, enabledWhen: () => _mode.Value != SpeedMode.AlwaysOn);
         settings.Toggle(MenuSection.Movement, 70, "Keep Attack Slowdown", _keepAttackSlowdown);
