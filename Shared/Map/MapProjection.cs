@@ -82,13 +82,15 @@ internal static class MapProjection
 
     /// <summary>
     /// Projects a world position onto the map. False when it lies outside the mapped world
-    /// (other scenes, e.g. building interiors, sit outside these bounds).
+    /// (other scenes, e.g. building interiors, sit outside these bounds). <paramref name="heightCorrection"/>
+    /// adds height × this to the north-south position: the game's map picture sits off its own
+    /// projection by an amount that grows with height (the minimap lets players tune it; 0 is the game).
     /// </summary>
-    public static bool TryWorldToMap(Vector3 world, Vector2 mapSize, out Vector2 mapPoint)
+    public static bool TryWorldToMap(Vector3 world, Vector2 mapSize, out Vector2 mapPoint, float heightCorrection = 0f)
     {
         Transform min = GUIElements.Instance.WorldMin;
         Transform max = GUIElements.Instance.WorldMax;
-        float adjustedZ = world.z + world.y * TiltTangent();
+        float adjustedZ = world.z + world.y * (TiltTangent() + heightCorrection);
 
         float minX = Mathf.Min(min.position.x, max.position.x);
         float maxX = Mathf.Max(min.position.x, max.position.x);

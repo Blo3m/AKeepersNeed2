@@ -22,8 +22,8 @@ internal sealed class MarkerLayer : MonoBehaviour
     private const float RescanSeconds = 2f;
     private const float LabelGap = 4f;
 
-    private static readonly Color DotColor = new Color(0.9f, 0.9f, 0.85f, 1f);
-    private static readonly Color ReadyTint = new Color(1f, 0.8f, 0.2f, 1f);
+    internal static readonly Color DotColor = new Color(0.9f, 0.9f, 0.85f, 1f);
+    internal static readonly Color ReadyTint = new Color(1f, 0.8f, 0.2f, 1f);
 
     private readonly Dictionary<WgoData, Marker> _markers = new Dictionary<WgoData, Marker>();
     private readonly HashSet<WgoData> _seen = new HashSet<WgoData>();
@@ -37,7 +37,7 @@ internal sealed class MarkerLayer : MonoBehaviour
     private float _nextScan;
     private float _size;
 
-    public MarkerCatalog Catalog { get; } = new MarkerCatalog();
+    public MarkerCatalog Catalog => MapMarkersModule.Catalog;
 
     public static MarkerLayer Ensure(MapPageWidget widget, RectTransform mapRect)
     {
@@ -82,7 +82,7 @@ internal sealed class MarkerLayer : MonoBehaviour
     public void Rescan()
     {
         _nextScan = Time.unscaledTime + RescanSeconds;
-        Catalog.Scan();
+        MapMarkersModule.ScanIfStale(0f);
         ApplyFilters();
         _legend?.Refresh();
     }
@@ -278,7 +278,7 @@ internal sealed class MarkerLayer : MonoBehaviour
             var image = go.AddComponent<Image>();
             image.sprite = entry.Type.Icon != null
                 ? entry.Type.Icon
-                : GameSprites.Dot;
+                : GeneratedSprites.Dot;
             image.preserveAspect = true;
 
             var marker = go.AddComponent<Marker>();

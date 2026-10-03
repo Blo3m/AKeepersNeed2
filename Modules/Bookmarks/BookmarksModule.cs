@@ -1,4 +1,6 @@
+using System.Collections.Generic;
 using AKeepersNeed2.Core;
+using AKeepersNeed2.Core.MapPins;
 using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Shared.Bookmarks;
 using AKeepersNeed2.Shared.Map;
@@ -43,6 +45,40 @@ internal sealed class BookmarksModule : HarmonyModule, IUpdatable
             AccessTools.Method(typeof(MapPageWidget), nameof(MapPageWidget.Redraw)),
             postfix: new HarmonyMethod(typeof(BookmarksModule), nameof(AfterRedraw))
         );
+    }
+
+    protected override void OnEnabled()
+    {
+        MapPinRegistry.Register(Pins);
+    }
+
+    protected override void OnDisabled()
+    {
+        MapPinRegistry.Unregister(Pins);
+    }
+
+    /// <summary>The world scene's bookmarks as gold diamonds for the minimap.</summary>
+    private static IEnumerable<MapPin> Pins()
+    {
+        string worldScene = MapProjection.WorldSceneId;
+        if (!_showOnMap.Value || worldScene == null)
+        {
+            yield break;
+        }
+        foreach (Bookmark bookmark in BookmarkStore.All)
+        {
+            if (bookmark.Scene == worldScene)
+            {
+                yield return new MapPin
+                {
+                    World = bookmark.Position,
+                    Color = BookmarkMarker.Fill,
+                    Size = 9f,
+                    Diamond = true,
+                    Layer = 30,
+                };
+            }
+        }
     }
 
     public void Tick()

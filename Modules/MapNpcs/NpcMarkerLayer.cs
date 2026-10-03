@@ -193,7 +193,7 @@ internal sealed class NpcMarkerLayer : MonoBehaviour
         _label.anchoredPosition = _hovered.Rect.anchoredPosition + offset;
     }
 
-    private static bool IsMappedNpc(WgoData wgo, Vector2 mapSize)
+    internal static bool IsMappedNpc(WgoData wgo, Vector2 mapSize)
     {
         if (wgo == null || wgo.IsHidden)
         {
@@ -231,7 +231,7 @@ internal sealed class NpcMarkerLayer : MonoBehaviour
     // The game's portraits use a shader that replaces their blue key colour with _Color
     // (UINpcWidget sets it transparent via ImageExtensions.BlueColorReplace). Copy that
     // material from the NPC widget; without one the key colour stays visible.
-    private static Material CreatePortraitMaterial()
+    internal static Material CreatePortraitMaterial()
     {
         foreach (UINpcWidget widget in Resources.FindObjectsOfTypeAll<UINpcWidget>())
         {

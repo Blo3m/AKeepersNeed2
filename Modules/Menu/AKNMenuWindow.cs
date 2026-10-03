@@ -1,4 +1,5 @@
 using System;
+using AKeepersNeed2.Core;
 using AKeepersNeed2.Core.Settings;
 using AKeepersNeed2.Modules.Menu.Controls;
 using AKeepersNeed2.Modules.Menu.Keybinds;
@@ -245,6 +246,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
     protected override void HideWindow()
     {
         ResetTransientState();
+        MenuState.IsOpen = false;
         base.HideWindow();
     }
 
@@ -263,6 +265,7 @@ internal sealed class AKNMenuWindow : LazyWindow<LazyWidgetDataBase>
         // After Open, so the window is laid out at the current resolution before clamping.
         Canvas.ForceUpdateCanvases();
         ApplySavedPosition();
+        MenuState.IsOpen = true;
     }
 
     // LazyWindow.PrintTips assumes a tips widget exists; ours has none, so guard.

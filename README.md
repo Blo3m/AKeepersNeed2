@@ -122,6 +122,11 @@ right. When the mod is installed, the main menu shows
   mushrooms …), plus chests, stockpiles, NPCs with something to say (gold when a quest is ready to
   hand in), fishing spots and doors. Pick them in the "Markers" legend on the map page; hover a
   marker for its name. Marker size is adjustable
+- **Minimap** — a map in the top-right corner centred on you, with an arrow for where you're
+  heading and the same map markers, bookmarks and NPC faces as the big map. Zoom with the + / -
+  buttons in its corner; drag and resize it while the mod menu is open. Optional hotkey to hide it;
+  hides itself indoors and while the world map is open. Height and sideways correction sliders line
+  you up with the map picture (the game's own map places you slightly off)
 - **Teleport bookmarks** — save where you stand under a name and teleport back any time, also
   into other areas and interiors; rename, delete, and give each one its own hotkey. Bookmarks
   belong to the active profile

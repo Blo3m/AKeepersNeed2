@@ -15,7 +15,7 @@ internal sealed class BookmarkMarker :
     IPointerClickHandler,
     IMapClickTarget
 {
-    private static readonly Color Fill = new Color(0.95f, 0.75f, 0.25f, 1f);
+    internal static readonly Color Fill = new Color(0.95f, 0.75f, 0.25f, 1f);
     private static readonly Color Edge = new Color(0.15f, 0.08f, 0.04f, 1f);
 
     private BookmarkMarkerLayer _layer;

@@ -64,16 +64,28 @@ internal abstract class HarmonyModule : IModule, ISettingsDeclarer
         {
             ApplyPatches();
         }
+        OnEnabled();
     }
 
     public void Disable()
     {
+        OnDisabled();
         foreach (ConfigEntry<bool> flag in GateFlags)
         {
             flag.SettingChanged -= OnFlagChanged;
         }
         RemovePatches();
         _harmony = null;
+    }
+
+    /// <summary>Runs once the module is enabled (e.g. to register a Core registry entry).</summary>
+    protected virtual void OnEnabled()
+    {
+    }
+
+    /// <summary>Runs as the module is disabled.</summary>
+    protected virtual void OnDisabled()
+    {
     }
 
     private void OnFlagChanged(object sender, EventArgs e)
